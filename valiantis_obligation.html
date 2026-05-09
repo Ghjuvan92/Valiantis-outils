@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valiantis — Obligation, distribution des scénarios</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Raleway:wght@300;400;500;600&display=swap');
+  :root {
+    --bleu:  #1a2e45;
+    --or:    #b8975a;
+    --vert:  #2a7a50;
+    --rouge: #9e2b2b;
+    --gris:  #6a6a7a;
+    --clair: #f7f5f0;
+    --bord:  #ddd8ce;
+    --beige: #ede8df;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--clair); font-family:'Raleway',sans-serif; color:var(--bleu); padding:2rem 1rem 3rem; }
+
+  .logo-band {
+    text-align:center;
+    margin-bottom:1.4rem;
+  }
+  .logo-band .logo-text {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.1rem;
+    font-weight:600;
+    letter-spacing:.25em;
+    text-transform:uppercase;
+    color:var(--bleu);
+    opacity:.5;
+  }
+
+  h1 {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.75rem;
+    font-weight:600;
+    text-align:center;
+    margin-bottom:.35rem;
+    color:var(--bleu);
+    letter-spacing:.02em;
+  }
+  .sous-titre {
+    text-align:center; font-size:.84rem; color:var(--gris);
+    margin-bottom:1.8rem; line-height:1.6;
+    font-weight:400;
+  }
+  .sous-titre strong { color:var(--bleu); font-weight:600; }
+
+  .params {
+    display:flex; flex-wrap:wrap; gap:1rem 2rem; justify-content:center;
+    background:white; border:1px solid var(--bord); border-radius:4px;
+    padding:1.2rem 1.5rem; margin:0 auto 1.5rem; max-width:760px;
+    box-shadow: 0 1px 8px rgba(26,46,69,.06);
+  }
+  .param-group { display:flex; flex-direction:column; gap:.6rem; }
+  .param-group-title {
+    font-size:.65rem; text-transform:uppercase; letter-spacing:.12em;
+    font-weight:600; color:var(--or);
+    border-bottom:1px solid var(--bord); padding-bottom:.3rem;
+  }
+  .param-item { display:flex; flex-direction:column; align-items:center; gap:.2rem; }
+  .param-item label { font-size:.72rem; color:var(--gris); font-weight:400; }
+  input[type=range] { width:110px; accent-color:var(--or); cursor:pointer; }
+  .param-val {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.15rem; font-weight:700; color:var(--bleu);
+  }
+
+  .schema-wrap {
+    max-width:820px; margin:0 auto;
+    background:white; border:1px solid var(--bord); border-radius:4px;
+    padding:1.4rem;
+    box-shadow: 0 1px 8px rgba(26,46,69,.06);
+  }
+  canvas { display:block; width:100%; border-radius:2px; }
+
+  .note {
+    max-width:700px; margin:1rem auto 0;
+    font-size:.72rem; color:var(--gris);
+    text-align:center; font-style:italic; line-height:1.7;
+  }
+
+  .footer-band {
+    text-align:center;
+    margin-top:2rem;
+    font-size:.7rem;
+    color:var(--gris);
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    opacity:.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="logo-band">
+  <span class="logo-text">Valiantis · Conseil patrimonial</span>
+</div>
+
+<h1>Obligation — Distribution des scénarios</h1>
+<p class="sous-titre">
+  Les petites variations de taux sont les plus probables chaque année.<br>
+  <strong>Foncé = probable · Blanc = rare.</strong> L'éventail s'élargit avec le temps.
+</p>
+
+<div class="params">
+  <div class="param-group">
+    <div class="param-group-title">Obligation</div>
+    <div class="param-item"><label>Portage / an</label>
+      <input type="range" id="portage" min="2" max="8" step="0.25" value="5">
+      <span class="param-val" id="portageVal">5,0 %</span></div>
+    <div class="param-item"><label>Sensibilité</label>
+      <input type="range" id="sensi" min="1" max="10" step="1" value="5">
+      <span class="param-val" id="sensiVal">5</span></div>
+  </div>
+  <div class="param-group">
+    <div class="param-group-title">Taux d'intérêt</div>
+    <div class="param-item"><label>Volatilité des taux / an</label>
+      <input type="range" id="volTaux" min="25" max="200" step="25" value="50">
+      <span class="param-val" id="volTauxVal">50 pb</span></div>
+    <div class="param-item"><label>Choc de taux (pb)</label>
+      <input type="range" id="choc" min="0" max="300" step="25" value="50">
+      <span class="param-val" id="chocVal">50 pb</span></div>
+  </div>
+  <div class="param-group">
+    <div class="param-group-title">Référence</div>
+    <div class="param-item"><label>Livret / an</label>
+      <input type="range" id="livret" min="0.5" max="4" step="0.25" value="1.5">
+      <span class="param-val" id="livretVal">1,5 %</span></div>
+  </div>
+</div>
+
+<div class="schema-wrap">
+  <canvas id="chart"></canvas>
+</div>
+
+<p class="note">
+  Mouvement brownien : σ_taux × √t. Performance = portage × t − sensibilité × ΔR/100.
+  Vert = baisse de taux · Bleu marine = taux stables · Rouge = hausse de taux.
+  Les performances passées ne préjugent pas des performances futures.
+</p>
+
+<div class="footer-band">valiantis.fr · Cabinet indépendant de stratégie patrimoniale</div>
+
+<script>
+const el     = id => document.getElementById(id);
+const fmt1   = v  => v.toFixed(1).replace('.', ',');
+const fmtPct = v  => (v >= 0 ? '+' : '') + fmt1(v) + ' %';
+const YEARS  = 5;
+
+['portage','sensi','volTaux','choc','livret'].forEach(id =>
+  el(id).addEventListener('input', () => { updateLabels(); draw(); })
+);
+
+function updateLabels() {
+  el('portageVal').textContent = fmt1(+el('portage').value) + ' %';
+  el('sensiVal').textContent   = el('sensi').value;
+  el('volTauxVal').textContent = el('volTaux').value + ' pb';
+  el('chocVal').textContent    = el('choc').value + ' pb';
+  el('livretVal').textContent  = fmt1(+el('livret').value) + ' %';
+}
+
+function draw() {
+  const portage = +el('portage').value;
+  const sensi   = +el('sensi').value;
+  const volTaux = +el('volTaux').value;
+  const choc    = +el('choc').value;
+  const livret  = +el('livret').value;
+
+  // ── Setup canvas ──────────────────────────────────────────────────────────
+  const canvas  = el('chart');
+  const wrap    = canvas.parentElement;
+  const dpr     = window.devicePixelRatio || 1;
+  const cssW    = wrap.clientWidth - 24;  // padding 1.2rem × 2
+  const cssH    = Math.round(cssW * 460 / 780);
+  canvas.width  = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width  = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // ── Layout (en css-pixels) ────────────────────────────────────────────────
+  const W = cssW, H = cssH;
+  const mL = Math.round(W*40/780), mR = Math.round(W*110/780);
+  const mT = Math.round(H*36/460), mB = Math.round(H*50/460);
+  const cW = W - mL - mR, cH = H - mT - mB;
+
+  const mkCurve = fn => Array.from({length:YEARS+1}, (_, i) => portage*i - sensi*fn(i)/100);
+  const curveC = mkCurve(() => 0);
+  const curveH = mkCurve(i => +choc * i);
+  const curveB = mkCurve(i => -choc * i);
+  const curveL = Array.from({length:YEARS+1}, (_, i) => livret * i);
+
+  const allV = [...curveC,...curveH,...curveB,...curveL,0];
+  const yMin = Math.min(...allV) - 2;
+  const yMax = Math.max(...allV) + 2;
+
+  const xOf  = i => mL + (i/YEARS)*cW;
+  const yOf  = v => mT + cH - ((v-yMin)/(yMax-yMin))*cH;
+  const vOf  = y => yMin + (1-(y-mT)/cH)*(yMax-yMin);
+
+  // Couleurs Valiantis
+  const C_BLEU  = '#1a2e45';
+  const C_VERT  = '#2a7a50';
+  const C_ROUGE = '#9e2b2b';
+  const C_OR    = '#b8975a';
+  const C_GAUSS = [26, 46, 69];   // bleu marine Valiantis en RGB pour ImageData
+
+  // ── Fond blanc ──────────────────────────────────────────────────────────
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Gaussienne : ImageData pixel buffer ──────────────────────────────────
+  const sigmaRef   = Math.max(sensi * (volTaux/100) * 1, 0.05);
+  const densitéRef = 1 / (sigmaRef * Math.sqrt(2*Math.PI));
+
+  const imgData = ctx.createImageData(Math.round(cW * dpr), Math.round(cH * dpr));
+  const buf     = imgData.data;
+
+  for (let py = 0; py < Math.round(cH * dpr); py++) {
+    const vPerf = vOf(mT + py / dpr);
+    for (let px = 0; px < Math.round(cW * dpr); px++) {
+      const t = (px / dpr / cW) * YEARS;
+      if (t <= 0.01) continue;
+      const sigma   = Math.max(sensi * (volTaux/100) * Math.sqrt(t), 0.05);
+      const muPerf  = portage * t;
+      const halfExt = sensi * choc * t / 100;
+      if (vPerf < muPerf - halfExt || vPerf > muPerf + halfExt) continue;
+      const dens  = Math.exp(-0.5*Math.pow((vPerf-muPerf)/sigma, 2))
+                    / (sigma * Math.sqrt(2*Math.PI));
+      const alpha = Math.min(0.65, (dens/Math.max(densitéRef,1e-9)) * 0.65);
+      if (alpha < 0.005) continue;
+      const idx = (py * Math.round(cW * dpr) + px) * 4;
+      buf[idx]   = Math.round(C_GAUSS[0] * alpha + 255 * (1-alpha));
+      buf[idx+1] = Math.round(C_GAUSS[1] * alpha + 255 * (1-alpha));
+      buf[idx+2] = Math.round(C_GAUSS[2] * alpha + 255 * (1-alpha));
+      buf[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, Math.round(mL * dpr), Math.round(mT * dpr));
+
+  // Supprimer l'éventuel SVG gaussien résiduel
+  const oldG = el('chart').parentElement.querySelector('svg.gauss');
+  if (oldG) oldG.remove();
+
+  // ── Ligne zéro ───────────────────────────────────────────────────────────
+  if (yMin < 0 && yMax > 0) {
+    const y0 = yOf(0);
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(mL, y0); ctx.lineTo(W-mR, y0); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#aaa';
+    ctx.font = `${Math.round(H*10/460)}px Source Sans 3`;
+    ctx.textAlign = 'right';
+    ctx.fillText('0 %', mL - 5, y0 + 4);
+  }
+
+  // ── Années ───────────────────────────────────────────────────────────────
+  ctx.fillStyle   = '#888';
+  ctx.font        = `600 ${Math.round(H*11/460)}px Source Sans 3`;
+  ctx.textAlign   = 'center';
+  for (let i = 0; i <= YEARS; i++) {
+    ctx.fillText(i === 0 ? 'Départ' : 'An ' + i, xOf(i), mT + cH + Math.round(H*18/460));
+  }
+
+  // ── Courbe helper ─────────────────────────────────────────────────────────
+  function drawCurve(curve, color, lineW, dash=[]) {
+    ctx.setLineDash(dash);
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = lineW;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+    ctx.beginPath();
+    curve.forEach((v,i) => i===0 ? ctx.moveTo(xOf(i),yOf(v)) : ctx.lineTo(xOf(i),yOf(v)));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  drawCurve(curveL, C_OR,    1.8, [5,4]);
+  drawCurve(curveH, C_ROUGE, 2.5);
+  drawCurve(curveB, C_VERT,  2.5);
+  drawCurve(curveC, C_BLEU,  3);
+
+  // ── Points finaux ─────────────────────────────────────────────────────────
+  function drawDot(i, curve, color, r=5) {
+    ctx.beginPath();
+    ctx.arc(xOf(i), yOf(curve[i]), r, 0, Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  drawDot(YEARS, curveB, C_VERT);
+  drawDot(YEARS, curveC, C_BLEU);
+  drawDot(YEARS, curveH, C_ROUGE);
+  drawDot(YEARS, curveL, C_OR, 4);
+
+  // ── Étiquettes finales ────────────────────────────────────────────────────
+  function endLabel(curve, color, bgColor, dy) {
+    const x  = xOf(YEARS) + 10;
+    const y  = yOf(curve[YEARS]) + dy;
+    const bw = 76, bh = 22, r = 5;
+    ctx.fillStyle = bgColor;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.roundRect(x, y - bh/2, bw, bh, r);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = `700 12px Source Sans 3`;
+    ctx.textAlign = 'center';
+    ctx.fillText(fmtPct(curve[YEARS]), x + bw/2, y + 4);
+  }
+  const vB=curveB[YEARS],vC=curveC[YEARS],vH=curveH[YEARS],vL=curveL[YEARS];
+  endLabel(curveB, C_VERT,  '#edf7f2', 0);
+  endLabel(curveC, C_BLEU,  '#eef2f8', vC > vB - 8 ? -28 : 0);
+  endLabel(curveH, C_ROUGE, '#fdf0f0', vH < vC - 8 ? 28 : -28);
+  endLabel(curveL, C_OR,    '#fdf8ee', vL < vC ? 28 : -28);
+
+  // ── Légende ───────────────────────────────────────────────────────────────
+  const lx = mL + 8, ly = mT + 10;
+  const legs = [
+    { color:C_VERT,  label:`📉 Baisse de taux (−${choc} pb/an)` },
+    { color:C_BLEU,  label:`➡️ Taux stables (portage pur)` },
+    { color:C_ROUGE, label:`📈 Hausse de taux (+${choc} pb/an)` },
+    { color:C_OR,    label:`Livret (${fmt1(livret)} %/an)`, dash:true },
+  ];
+  const legH = legs.length * 20 + 32;
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(lx - 7, ly - 7, 262, legH, 3);
+  ctx.fill(); ctx.stroke();
+
+  // Swatch gaussien (couleur Valiantis)
+  [[22,11,0.06],[14,9,0.22],[8,7,0.50]].forEach(([w,h,a],i) => {
+    ctx.fillStyle = `rgba(${C_GAUSS[0]},${C_GAUSS[1]},${C_GAUSS[2]},${a})`;
+    ctx.fillRect(lx + [0,4,7][i], ly + [3,4,5][i], w, h);
+  });
+  ctx.fillStyle = '#555';
+  ctx.font = '10px Raleway,sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Densité gaussienne (foncé = probable)', lx + 28, ly + 12);
+
+  legs.forEach((it, i) => {
+    const y = ly + 24 + i * 20;
+    ctx.setLineDash(it.dash ? [5,3] : []);
+    ctx.strokeStyle = it.color;
+    ctx.lineWidth = it.dash ? 2 : 3;
+    ctx.beginPath(); ctx.moveTo(lx, y+4); ctx.lineTo(lx+22, y+4); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(lx+11, y+4, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = it.color; ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = '#333';
+    ctx.font = '10.5px Source Sans 3';
+    ctx.textAlign = 'left';
+    ctx.fillText(it.label, lx + 28, y + 8);
+  });
+
+  // ── Titre canvas ──────────────────────────────────────────────────────────
+  ctx.fillStyle = C_BLEU;
+  ctx.font = `600 ${Math.round(H*12/460)}px Cormorant Garamond,serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`Portage ${fmt1(portage)} % · Sensibilité ${sensi} · Volatilité taux ${volTaux} pb/an`, W/2, mT - 10);
+}
+
+window.addEventListener('resize', draw);
+updateLabels();
+
+// Sur mobile, clientWidth peut être 0 au premier appel.
+// On boucle avec requestAnimationFrame jusqu'à ce que les dimensions soient disponibles.
+function tryDraw() {
+  const wrap = el('chart').parentElement;
+  if (wrap.clientWidth > 0) {
+    draw();
+  } else {
+    requestAnimationFrame(tryDraw);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', tryDraw);
+} else {
+  requestAnimationFrame(tryDraw);
+}
+</script>
+</body>
+</html>
