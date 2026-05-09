@@ -196,7 +196,7 @@ function draw() {
 
   // ── Layout (en css-pixels) ────────────────────────────────────────────────
   const W = cssW, H = cssH;
-  const mL = Math.round(W*40/780), mR = Math.round(W*110/780);
+  const mL = Math.round(W*40/780), mR = Math.round(W * (W < 420 ? 70 : 110) / 780);
   const mT = Math.round(H*36/460), mB = Math.round(H*50/460);
   const cW = W - mL - mR, cH = H - mT - mB;
 
@@ -330,12 +330,33 @@ function draw() {
     ctx.fillText(fmtPct(curve[YEARS]), x + bw/2, y + 4);
   }
   const vB=curveB[YEARS],vC=curveC[YEARS],vH=curveH[YEARS],vL=curveL[YEARS];
-  endLabel(curveB, C_VERT,  '#edf7f2', 0);
-  endLabel(curveC, C_BLEU,  '#eef2f8', vC > vB - 8 ? -28 : 0);
-  endLabel(curveH, C_ROUGE, '#fdf0f0', vH < vC - 8 ? 28 : -28);
-  endLabel(curveL, C_OR,    '#fdf8ee', vL < vC ? 28 : -28);
 
-  // ── Légende HTML (hors canvas) ────────────────────────────────────────────
+  // Sur mobile les étiquettes à droite débordent → on les place au-dessus/dessous des points
+  function endLabel(curve, color, bgColor, dy) {
+    const x   = xOf(YEARS);
+    const y   = yOf(curve[YEARS]);
+    const bw  = Math.min(72, cW * 0.22);
+    const bh  = 20;
+    const r   = 4;
+    // Position : à droite si la place le permet, sinon au-dessus
+    const labelX = (x + 10 + bw < W) ? x + 10 : x - bw - 6;
+    const labelY = y + dy;
+    ctx.fillStyle = bgColor;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.roundRect(labelX, labelY - bh/2, bw, bh, r);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = `700 ${Math.max(10, Math.round(W*12/780))}px Source Sans 3`;
+    ctx.textAlign = 'center';
+    ctx.fillText(fmtPct(curve[YEARS]), labelX + bw/2, labelY + 4);
+  }
+
+  endLabel(curveB, C_VERT,  '#edf7f2', 0);
+  endLabel(curveC, C_BLEU,  '#eef2f8', vC > vB - 8 ? -26 : 0);
+  endLabel(curveH, C_ROUGE, '#fdf0f0', vH < vC - 8 ? 26 : -26);
+  endLabel(curveL, C_OR,    '#fdf8ee', vL < vC ? 26 : -26);
   const legItems = [
     { color:C_VERT,  label:`📉 Baisse de taux (−${choc} pb/an)` },
     { color:C_BLEU,  label:`➡️ Taux stables (portage pur)` },
