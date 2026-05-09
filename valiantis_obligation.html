@@ -324,46 +324,58 @@ function draw() {
   endLabel(curveH, C_ROUGE, '#fdf0f0', vH < vC - 8 ? 28 : -28);
   endLabel(curveL, C_OR,    '#fdf8ee', vL < vC ? 28 : -28);
 
-  // ── Légende ───────────────────────────────────────────────────────────────
-  const lx = mL + 8, ly = mT + 10;
+  // ── Légende : position adaptée à la taille du canvas ─────────────────────
+  // Sur mobile (W < 400px) → en bas, texte réduit
+  // Sur desktop → en haut à gauche comme avant
+  const isMobile = W < 420;
+  const legFontSize = isMobile ? 9 : 10.5;
+  const legLabelW   = isMobile ? 180 : 262;
+  const lx = isMobile ? mL + 4 : mL + 8;
+  const ly = isMobile ? mT + cH - 110 : mT + 10;
+
   const legs = [
-    { color:C_VERT,  label:`📉 Baisse de taux (−${choc} pb/an)` },
-    { color:C_BLEU,  label:`➡️ Taux stables (portage pur)` },
-    { color:C_ROUGE, label:`📈 Hausse de taux (+${choc} pb/an)` },
+    { color:C_VERT,  label:`📉 Baisse (−${choc} pb/an)` },
+    { color:C_BLEU,  label:`➡️ Taux stables` },
+    { color:C_ROUGE, label:`📈 Hausse (+${choc} pb/an)` },
     { color:C_OR,    label:`Livret (${fmt1(livret)} %/an)`, dash:true },
   ];
-  const legH = legs.length * 20 + 32;
-  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  const legRowH = isMobile ? 17 : 20;
+  const legH = legs.length * legRowH + (isMobile ? 22 : 32);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.96)';
   ctx.strokeStyle = '#ddd';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(lx - 7, ly - 7, 262, legH, 3);
+  ctx.roundRect(lx - 6, ly - 6, legLabelW, legH, 3);
   ctx.fill(); ctx.stroke();
 
-  // Swatch gaussien (couleur Valiantis)
-  [[22,11,0.06],[14,9,0.22],[8,7,0.50]].forEach(([w,h,a],i) => {
-    ctx.fillStyle = `rgba(${C_GAUSS[0]},${C_GAUSS[1]},${C_GAUSS[2]},${a})`;
-    ctx.fillRect(lx + [0,4,7][i], ly + [3,4,5][i], w, h);
-  });
-  ctx.fillStyle = '#555';
-  ctx.font = '10px Raleway,sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('Densité gaussienne (foncé = probable)', lx + 28, ly + 12);
+  if (!isMobile) {
+    // Swatch gaussien uniquement sur desktop
+    [[22,11,0.06],[14,9,0.22],[8,7,0.50]].forEach(([w,h,a],i) => {
+      ctx.fillStyle = `rgba(${C_GAUSS[0]},${C_GAUSS[1]},${C_GAUSS[2]},${a})`;
+      ctx.fillRect(lx + [0,4,7][i], ly + [3,4,5][i], w, h);
+    });
+    ctx.fillStyle = '#555';
+    ctx.font = '10px Raleway,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Densité gaussienne (foncé = probable)', lx + 28, ly + 12);
+  }
 
+  const legStartY = isMobile ? ly + 12 : ly + 24;
   legs.forEach((it, i) => {
-    const y = ly + 24 + i * 20;
+    const y = legStartY + i * legRowH;
     ctx.setLineDash(it.dash ? [5,3] : []);
     ctx.strokeStyle = it.color;
-    ctx.lineWidth = it.dash ? 2 : 3;
-    ctx.beginPath(); ctx.moveTo(lx, y+4); ctx.lineTo(lx+22, y+4); ctx.stroke();
+    ctx.lineWidth = it.dash ? 1.5 : 2.5;
+    ctx.beginPath(); ctx.moveTo(lx, y+3); ctx.lineTo(lx+18, y+3); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.beginPath(); ctx.arc(lx+11, y+4, 3.5, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(lx+9, y+3, 3, 0, Math.PI*2);
     ctx.fillStyle = it.color; ctx.fill();
-    ctx.strokeStyle = 'white'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = '#333';
-    ctx.font = '10.5px Source Sans 3';
+    ctx.font = `${legFontSize}px Source Sans 3`;
     ctx.textAlign = 'left';
-    ctx.fillText(it.label, lx + 28, y + 8);
+    ctx.fillText(it.label, lx + 24, y + 7);
   });
 
   // ── Titre canvas ──────────────────────────────────────────────────────────
