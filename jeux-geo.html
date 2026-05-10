@@ -75,8 +75,7 @@ select option{background:#5c2a0a;color:#fdf6ee}
 .qzone:not(:empty)::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--orange);flex-shrink:0}
 
 /* CHEESE PHOTO */
-.cheese-img{width:100%;max-height:180px;object-fit:cover;border-radius:var(--rs);margin-bottom:.65rem;
-  box-shadow:0 2px 12px rgba(42,26,14,.3)}
+.cheese-img{width:100%;max-height:260px;object-fit:contain;border-radius:var(--rs);margin-bottom:.65rem;background:#f5f0e8}
 .cheese-img-wrap{position:relative}
 .cheese-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   background:rgba(42,26,14,.15);border-radius:var(--rs);font-size:.8rem;color:rgba(253,246,238,.7)}
@@ -136,6 +135,7 @@ select option{background:#5c2a0a;color:#fdf6ee}
   <button class="tab" onclick="switchTab('dep')">🗺 Départements</button>
   <button class="tab" onclick="switchTab('cha')">🎵 Chansons</button>
   <button class="tab" onclick="switchTab('fro')">🧀 Fromages</button>
+  <button class="tab" onclick="switchTab('vin')">🍷 Vins</button>
 </div>
 
 <!-- ══ CAPITALES ══ -->
@@ -286,7 +286,7 @@ select option{background:#5c2a0a;color:#fdf6ee}
   <div class="prog"><div class="prog-fill" id="fro-prog" style="width:0%"></div></div>
   <div id="fro-game">
     <div class="qcard">
-      <div class="qlabel">Quel est ce fromage ?</div>
+      <div class="qlabel" id="fro-qlabel">Quel est ce fromage ?</div>
       <div class="cheese-img-wrap">
         <img id="fro-img" class="cheese-img" src="" alt="fromage" style="display:none">
         <div class="cheese-loading" id="fro-loading">Chargement…</div>
@@ -306,6 +306,42 @@ select option{background:#5c2a0a;color:#fdf6ee}
       <button class="share-btn" onclick="shareScore('fro','🧀 Fromages')">⬆ Partager</button>
     </div>
     <div class="share-toast" id="fro-toast"></div>
+  </div>
+</div>
+
+<!-- ══ VINS ══ -->
+<div id="panel-vin" class="panel">
+  <div class="filters">
+    <span class="fl">Région</span>
+    <select id="vin-reg" onchange="resetVin()">
+      <option value="all">Toutes</option>
+    </select>
+  </div>
+  <div class="hud">
+    <div class="hud-lives" id="vin-hearts"></div>
+    <div class="hud-score">Score&thinsp;: <strong id="vin-score">0</strong>&thinsp;/&thinsp;<span id="vin-total">0</span></div>
+    <div class="hud-streak" id="vin-streak"></div>
+  </div>
+  <div class="prog"><div class="prog-fill" id="vin-prog" style="width:0%"></div></div>
+  <div id="vin-game">
+    <div class="qcard">
+      <div class="qlabel">À quelle région viticole appartient cette appellation ?</div>
+      <div class="qtext" id="vin-appellation">—</div>
+    </div>
+    <div class="choices" id="vin-choices"></div>
+    <div class="fb" id="vin-fb"></div>
+    <button class="nbtn" id="vin-next" onclick="nextVin()">Question suivante →</button>
+  </div>
+  <div class="end" id="vin-end">
+    <div class="end-eye">Partie terminée</div>
+    <div class="end-score" id="vin-escore"></div>
+    <div class="end-pct" id="vin-epct"></div>
+    <div class="end-msg" id="vin-emsg"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:1.4rem">
+      <button class="rbtn" style="margin-top:0" onclick="resetVin()">Rejouer</button>
+      <button class="share-btn" onclick="shareScore('vin','🍷 Vins')">⬆ Partager</button>
+    </div>
+    <div class="share-toast" id="vin-toast"></div>
   </div>
 </div>
 
@@ -771,125 +807,115 @@ function nextCha(){showCha()}
 // ═══════════════════════════════════════════════
 // DATA — FROMAGES
 // ═══════════════════════════════════════════════
+const P="Photos de fromages/";
 const FRO=[
-  {nom:"Abbaye de Belloc",fam:'Les "Chèvres et Brebis"',lait:"Brebis",reg:"Aquitaine",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Abbaye_Belloc.jpg"},
-  {nom:"Abbaye de Cîteaux",fam:'Les "Authentiques"',lait:"Vache",reg:"Bourgogne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Abbaye_Citeaux.jpg"},
-  {nom:"Abondance",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:"Rhône-Alpes",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Abondance.jpg"},
-  {nom:"Banon",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:"Provence-Alpes-Côte d'Azur",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Banon.jpg"},
-  {nom:"Beaufort",fam:'Les "Authentiques"',lait:"Vache",reg:"Rhône-Alpes",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Beaufort.jpg"},
-  {nom:"Bleu d'Auvergne",fam:'Les "Bleus"',lait:"Vache",reg:"Auvergne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Bleu_Auvergne.jpg"},
-  {nom:"Bleu de Gex",fam:'Les "Bleus"',lait:"Vache",reg:"Franche-Comté",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Bleu_Gex.jpg"},
-  {nom:"Bleu des Causses",fam:'Les "Bleus"',lait:"Vache",reg:"Midi-Pyrénées",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Bleu_Causses.jpg"},
-  {nom:"Brie",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:"Île-de-France",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Brie.jpg"},
-  {nom:"Brie de Meaux",fam:'Les "Authentiques"',lait:"Vache",reg:"Île-de-France",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Brie_Meaux.jpg"},
-  {nom:"Brocciu",fam:'Les "Authentiques"',lait:"Brebis",reg:"Corse",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Brocciu.jpg"},
-  {nom:"Camembert",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:"Normandie",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Camembert.jpg"},
-  {nom:"Cantal",fam:'Les "Authentiques"',lait:"Vache",reg:"Auvergne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Cantal.jpg"},
-  {nom:"Chabichou du Poitou",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:"Poitou-Charentes",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Chabichou_Poitou.jpg"},
-  {nom:"Chaource",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:"Champagne-Ardenne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Chaource.jpg"},
-  {nom:"Comté",fam:'Les "Authentiques"',lait:"Vache",reg:"Franche-Comté",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Comte.jpg"},
-  {nom:"Coulommiers",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:"Île-de-France",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Coulommiers.jpg"},
-  {nom:"Emmental",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:"Bretagne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Emmental.jpg"},
-  {nom:"Époisses",fam:'Les "Authentiques"',lait:"Vache",reg:"Bourgogne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Epoisses.jpg"},
-  {nom:"Fourme d'Ambert",fam:'Les "Bleus"',lait:"Vache",reg:"Auvergne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Fourme_Ambert.jpg"},
-  {nom:"Laguiole",fam:'Les "Authentiques"',lait:"Vache",reg:"Midi-Pyrénées",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Laguiole.jpg"},
-  {nom:"Langres",fam:'Les "Authentiques"',lait:"Vache",reg:"Champagne-Ardenne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Langres.jpg"},
-  {nom:"Livarot",fam:'Les "Authentiques"',lait:"Vache",reg:"Normandie",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Livarot.jpg"},
-  {nom:"Maroilles",fam:'Les "Authentiques"',lait:"Vache",reg:"Nord-Pas-de-Calais",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Maroilles.jpg"},
-  {nom:"Mimolette",fam:'Les "Authentiques"',lait:"Vache",reg:"Nord-Pas-de-Calais",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Mimolette.jpg"},
-  {nom:"Mont-d'Or",fam:'Les "Authentiques"',lait:"Vache",reg:"Franche-Comté",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Mont_Or.jpg"},
-  {nom:"Morbier",fam:'Les "Authentiques"',lait:"Vache",reg:"Franche-Comté",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Morbier.jpg"},
-  {nom:"Munster",fam:'Les "Authentiques"',lait:"Vache",reg:"Alsace",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Munster.jpg"},
-  {nom:"Neufchâtel",fam:'Les "Authentiques"',lait:"Vache",reg:"Normandie",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Neufchatel.jpg"},
-  {nom:"Ossau-Iraty",fam:'Les "Authentiques"',lait:"Brebis",reg:"Aquitaine",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Ossau_Iraty.jpg"},
-  {nom:"Pélardon",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:"Languedoc-Roussillon",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Pelardon.jpg"},
-  {nom:"Picodon",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:"Rhône-Alpes",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Picodon.jpg"},
-  {nom:"Pont-l'Évêque",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:"Normandie",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Pont_Eveque.jpg"},
-  {nom:"Pouligny Saint-Pierre",fam:'Les "Authentiques"',lait:"Chèvre",reg:"Centre",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Pouligny_Saint_Pierre.jpg"},
-  {nom:"Raclette",fam:'Les "Fondus"',lait:"Vache",reg:"Rhône-Alpes",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Raclette.jpg"},
-  {nom:"Reblochon",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:"Rhône-Alpes",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Reblochon.jpg"},
-  {nom:"Rocamadour",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:"Midi-Pyrénées",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Rocamadour.jpg"},
-  {nom:"Roquefort",fam:'Les "Traditions" du quotidien',lait:"Brebis",reg:"Midi-Pyrénées",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Roquefort.jpg"},
-  {nom:"Saint Agur",fam:'Les "Bleus"',lait:"Vache",reg:"Auvergne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Saint_Agur.jpg"},
-  {nom:"Saint-Marcellin",fam:'Les "Authentiques"',lait:"Vache",reg:"Rhône-Alpes",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Saint_Marcellin.jpg"},
-  {nom:"Saint-Nectaire",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:"Auvergne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Saint_Nectaire.jpg"},
-  {nom:"Sainte-Maure-de-Touraine",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:"Centre",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Sainte_Maure_Touraine.jpg"},
-  {nom:"Salers",fam:'Les "Authentiques"',lait:"Vache",reg:"Auvergne",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Salers.jpg"},
-  {nom:"Selles-sur-Cher",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:"Centre",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Selles_sur_Cher.jpg"},
-  {nom:"Tomme de Savoie",fam:'Les "Authentiques"',lait:"Vache",reg:"Rhône-Alpes",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Tomme_Savoie.jpg"},
-  {nom:"Valençay",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:"Centre",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Valencay.jpg"},
-  {nom:"Vieux Lille",fam:'Les "Authentiques"',lait:"Vache",reg:"Nord-Pas-de-Calais",img:"https://www.produits-laitiers.com/wp-content/uploads/2014/07/Vieux_Lille.jpg"},
+  {nom:"Abbaye de Belloc",fam:'Les "Chèvres et Brebis"',lait:"Brebis",reg:["Aquitaine"],img:P+"abbayebelloc-400x300.jpg"},
+  {nom:"Abbaye de Cîteaux",fam:'Les "Authentiques"',lait:"Vache",reg:["Bourgogne"],img:P+"vr_citeaux1-400x300.jpg"},
+  {nom:"Abbaye de Tamié",fam:'Les "Authentiques"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_tamie2-400x300.jpg"},
+  {nom:"Abbaye du Mont-des-Cats",fam:'',lait:"Vache",reg:["Nord-Pas-de-Calais"],img:P+"montdescats-400x300.jpg"},
+  {nom:"Abondance",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_abondance-400x300.jpg"},
+  {nom:"Aligot (Tomme fraîche d')",fam:'Les "Fondus"',lait:"Vache",reg:["Auvergne","Midi-Pyrénées"],img:P+"tomeaubrac2-400x300.jpg"},
+  {nom:"Apéricube",fam:'Les "Frais et Tartinables"',lait:"Vache",reg:["Franche-Comté"],img:P+"nc_fromages-en-cube-400x300.jpg"},
+  {nom:"Apérifrais",fam:'Les "Frais et Tartinables"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"aperivrais-400x300.jpg"},
+  {nom:"Babybel",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Pays de la Loire"],img:P+"babybel-400x300.jpg"},
+  {nom:"Banon",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Provence-Alpes-Côte d'Azur"],img:P+"vr_banonfeuille-400x300.jpg"},
+  {nom:"Bargkass",fam:'Les "Authentiques"',lait:"Vache",reg:["Alsace"],img:P+"bargkass-r-14496-400x300.jpg"},
+  {nom:"Beaufort",fam:'Les "Authentiques"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_beaufort-400x300.jpg"},
+  {nom:"Berger basque",fam:'Les "Chèvres et Brebis"',lait:"Brebis",reg:["Aquitaine"],img:P+"bergerbasque-400x300.jpg"},
+  {nom:"Bethmale",fam:'Les "Authentiques"',lait:"Vache",reg:["Midi-Pyrénées"],img:P+"bethmale-400x300.jpg"},
+  {nom:"Bleu d'Auvergne",fam:'Les "Bleus"',lait:"Vache",reg:["Auvergne"],img:P+"vr_bleuauvergne-400x300.jpg"},
+  {nom:"Bleu de Gex",fam:'Les "Bleus"',lait:"Vache",reg:["Franche-Comté"],img:P+"vr_bleudegex-400x300.jpg"},
+  {nom:"Bleu de Laqueuille",fam:'Les "Bleus"',lait:"Vache",reg:["Auvergne"],img:P+"vr_bleulaqueuille-400x300.jpg"},
+  {nom:"Bleu de Termignon",fam:'Les "Bleus"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_bleutermignon2-400x300.jpg"},
+  {nom:"Bleu des Causses",fam:'Les "Bleus"',lait:"Vache",reg:["Midi-Pyrénées"],img:P+"vr_bleucausses-400x300.jpg"},
+  {nom:"Bleu du Vercors-Sassenage",fam:'Les "Bleus"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_bleuvercorssassenage-400x300.jpg"},
+  {nom:"Bouchon de chèvre",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Bourgogne","Centre"],img:P+"bouchonchevre-400x300.jpg"},
+  {nom:"Boulette d'Avesnes",fam:'Les "Authentiques"',lait:"Vache",reg:["Nord-Pas-de-Calais"],img:P+"bouletteavesnes-400x300.jpg"},
+  {nom:"Boursault",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Île-de-France"],img:P+"vr_boursault-400x300.jpg"},
+  {nom:"Boursin",fam:'',lait:"Vache",reg:[],img:P+"boursin-400x300.jpg"},
+  {nom:"Bresse Bleu",fam:'',lait:"Vache",reg:["Rhône-Alpes"],img:P+"bresse-bleu-400x300.jpg"},
+  {nom:"Brézain",fam:'',lait:"Vache",reg:["Lorraine"],img:P+"vr_brezain-400x300.jpg"},
+  {nom:"Brie",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Île-de-France"],img:P+"brienonaop-400x300.jpg"},
+  {nom:"Brie de Meaux",fam:'',lait:"Vache",reg:["Île-de-France"],img:P+"vr_briemeaux-400x300.jpg"},
+  {nom:"Brie de Melun",fam:'',lait:"Vache",reg:["Île-de-France"],img:P+"vr_briemelun-400x300.jpg"},
+  {nom:"Brillat-Savarin",fam:'',lait:"Vache",reg:["Bourgogne"],img:P+"brillatsavarin-400x300.jpg"},
+  {nom:"Brique de chèvre",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Auvergne"],img:P+"fr33_-_brique_de_chevre-400x300.jpg"},
+  {nom:"Brocciu",fam:'Les "Authentiques"',lait:"Brebis",reg:["Corse"],img:P+"vr_famillebrocciu-400x300.jpg"},
+  {nom:"Brousse (la)",fam:'Les "Frais et Tartinables"',lait:"Brebis",reg:["Provence-Alpes-Côte d'Azur"],img:P+"brousse-400x300.jpg"},
+  {nom:"Bûche de chèvre",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Poitou-Charentes"],img:P+"fr34_-_buche_de_chevre-400x300.jpg"},
+  {nom:"Cabécou",fam:'',lait:"Chèvre",reg:["Midi-Pyrénées"],img:P+"fr_019_-_cabecou_d_autan-400x300.jpg"},
+  {nom:"Camembert",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Normandie"],img:P+"ms-camembert-840x630-1-400x300.jpg"},
+  {nom:"Camembert de Normandie",fam:'',lait:"Vache",reg:["Normandie"],img:P+"ms-camembert-840x630-1-400x300.jpg"},
+  {nom:"Cantal",fam:'Les "Authentiques"',lait:"Vache",reg:["Auvergne"],img:P+"vr_cantal-400x300.jpg"},
+  {nom:"Caprice des Dieux",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Champagne-Ardenne"],img:P+"vr_capricedieux2-400x300.jpg"},
+  {nom:"Carré de l'Est",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Lorraine"],img:P+"carreest-400x300.jpg"},
+  {nom:"Carré frais",fam:'Les "Frais et Tartinables"',lait:"Vache",reg:["Pays de la Loire"],img:P+"carrefrais-400x300.jpg"},
+  {nom:"Cendré de la Champagne",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Champagne-Ardenne"],img:P+"vr_cendrechampagne-400x300.jpg"},
+  {nom:"Chabichou du Poitou",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Poitou-Charentes"],img:P+"vr_chabichou-400x300.jpg"},
+  {nom:"Chamois d'or",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Auvergne"],img:P+"chamoisdor-400x300.jpg"},
+  {nom:"Chaource",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Bourgogne","Champagne-Ardenne"],img:P+"vr_chaource-400x300.jpg"},
+  {nom:"Charolais",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Bourgogne"],img:P+"vr_charolais-400x300.jpg"},
+  {nom:"Chartreux",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"chartreux-400x300.jpg"},
+  {nom:"Chaumes",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Aquitaine"],img:P+"chaumes-400x300.jpg"},
+  {nom:"Cœur d'Arras",fam:'Les "Authentiques"',lait:"Vache",reg:["Nord-Pas-de-Calais"],img:P+"vr_coeurarras4-copie-e1415807913981-400x300.jpg"},
+  {nom:"Comté",fam:'Les "Authentiques"',lait:"Vache",reg:["Franche-Comté"],img:P+"vr_comte-400x300.jpg"},
+  {nom:"Coulommiers",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Île-de-France"],img:P+"coulommier-400x300.jpg"},
+  {nom:"Curé nantais",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Pays de la Loire"],img:P+"vr_curenantais1-400x300.jpg"},
+  {nom:"Délice de Bourgogne",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Bourgogne"],img:P+"delicebourgogne2-400x300.jpg"},
+  {nom:"Emmental",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Bretagne"],img:P+"emmental-400x300.jpg"},
+  {nom:"Emmental de Savoie (IGP)",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_emmentalsavoie-400x300.jpg"},
+  {nom:"Emmental grand cru Est-Central",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Franche-Comté","Rhône-Alpes"],img:P+"900899_h1-400x300.jpg"},
+  {nom:"Époisses",fam:'Les "Authentiques"',lait:"Vache",reg:["Bourgogne"],img:P+"vr_epoisses-400x300.jpg"},
+  {nom:"Faisselle",fam:'Les "Frais et Tartinables"',lait:"Vache",reg:[],img:P+"fromagefondu2-400x300.jpg"},
+  {nom:"Fourme d'Ambert",fam:'Les "Bleus"',lait:"Vache",reg:["Auvergne"],img:P+"vr_fourmeambert-400x300.jpg"},
+  {nom:"Fourme de Montbrison",fam:'Les "Bleus"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_fourme_montbrison-400x300.jpg"},
+  {nom:"Gouda français",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Nord-Pas-de-Calais"],img:P+"goudafrancais-400x300.jpg"},
+  {nom:"Gruyère",fam:'Les "Quotidiens ou Culinaires"',lait:"Vache",reg:["Franche-Comté","Rhône-Alpes"],img:P+"vr_gruyere-400x300.jpg"},
+  {nom:"Kiri",fam:'Les "Frais et Tartinables"',lait:"Vache",reg:["Pays de la Loire"],img:P+"kiri-400x300.jpg"},
+  {nom:"La vache qui rit",fam:'Les "Frais et Tartinables"',lait:"Vache",reg:["Franche-Comté"],img:P+"fromagefondu2-400x300.jpg"},
+  {nom:"Laguiole",fam:'Les "Authentiques"',lait:"Vache",reg:["Midi-Pyrénées"],img:P+"vr_laguiole-400x300.jpg"},
+  {nom:"Langres",fam:'Les "Authentiques"',lait:"Vache",reg:["Champagne-Ardenne"],img:P+"vr_langres-400x300.jpg"},
+  {nom:"Livarot",fam:'Les "Authentiques"',lait:"Vache",reg:["Normandie"],img:P+"vr_stmarcellin2-400x300.jpg"},
+  {nom:"Mâconnais",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Bourgogne"],img:P+"vr_maconnais-400x300.jpg"},
+  {nom:"Maroilles",fam:'Les "Authentiques"',lait:"Vache",reg:["Champagne-Ardenne","Nord-Pas-de-Calais","Picardie"],img:P+"vr_maroilles-400x300.jpg"},
+  {nom:"Mimolette",fam:'Les "Authentiques"',lait:"Vache",reg:["Nord-Pas-de-Calais"],img:P+"mimolette-400x300.jpg"},
+  {nom:"Mont-d'Or",fam:'Les "Authentiques"',lait:"Vache",reg:["Franche-Comté"],img:P+"vr_montdor-400x300.jpg"},
+  {nom:"Morbier",fam:'Les "Authentiques"',lait:"Vache",reg:["Franche-Comté"],img:P+"vr_morbier-400x300.jpg"},
+  {nom:"Mottin Charentais",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Poitou-Charentes"],img:P+"mottincharentais-400x300.jpg"},
+  {nom:"Munster",fam:'Les "Authentiques"',lait:"Vache",reg:["Alsace","Lorraine"],img:P+"vr_munster-400x300.jpg"},
+  {nom:"Neufchâtel",fam:'Les "Authentiques"',lait:"Vache",reg:["Normandie"],img:P+"brienonaop-400x300.jpg"},
+  {nom:"Ossau fermier",fam:'Les "Traditions" du quotidien',lait:"Brebis",reg:["Aquitaine"],img:P+"ossauiraty-400x300.jpg"},
+  {nom:"Ossau-Iraty",fam:'Les "Authentiques"',lait:"Brebis",reg:["Aquitaine"],img:P+"ossauiraty-400x300.jpg"},
+  {nom:"Pélardon",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Languedoc-Roussillon"],img:P+"vr_pelardon-400x300.jpg"},
+  {nom:"Pérail",fam:'Les "Chèvres et Brebis"',lait:"Brebis",reg:["Midi-Pyrénées"],img:P+"vr_perail3-400x300.jpg"},
+  {nom:"Petit Billy",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Bretagne"],img:P+"petitbilly-400x300.jpg"},
+  {nom:"Petit suisse",fam:'Les "Frais et Tartinables"',lait:"Vache",reg:["Normandie"],img:P+"brienonaop-400x300.jpg"},
+  {nom:"Picodon",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Rhône-Alpes"],img:P+"vr_picodon-400x300.jpg"},
+  {nom:"Pont-l'Évêque",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Normandie"],img:P+"vr_a-stpaulin21-400x300.jpg"},
+  {nom:"Pouligny Saint-Pierre",fam:'Les "Authentiques"',lait:"Chèvre",reg:["Centre"],img:P+"vr_poulignystpierre-400x300.jpg"},
+  {nom:"Raclette",fam:'Les "Fondus"',lait:"Vache",reg:["Franche-Comté","Rhône-Alpes"],img:P+"raclette-400x300.jpg"},
+  {nom:"Reblochon",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_reblochon-400x300.jpg"},
+  {nom:"Rigotte de Condrieu",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Rhône-Alpes"],img:P+"vr_rigottecondrieu-400x300.jpg"},
+  {nom:"Rocamadour",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Midi-Pyrénées"],img:P+"vr_rocamadour-400x300.jpg"},
+  {nom:"Rochebaron",fam:'Les "Authentiques"',lait:"Vache",reg:["Auvergne"],img:P+"rochebaron-400x300.jpg"},
+  {nom:"Roquefort",fam:'Les "Traditions" du quotidien',lait:"Brebis",reg:["Midi-Pyrénées"],img:P+"vr_roquefort-400x300.jpg"},
+  {nom:"Saint Agur",fam:'Les "Bleus"',lait:"Vache",reg:["Auvergne"],img:P+"saintagur-400x300.jpg"},
+  {nom:"Saint-Felicien",fam:'Les "Authentiques"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_saintfelicien-400x300.jpg"},
+  {nom:"Saint-Marcellin",fam:'Les "Authentiques"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_stmarcellin2-400x300.jpg"},
+  {nom:"Saint-Nectaire",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Auvergne"],img:P+"vr_stnectaire-400x300.jpg"},
+  {nom:"Saint-Paulin",fam:'Les "Traditions" du quotidien',lait:"Vache",reg:["Bretagne","Lorraine","Nord-Pas-de-Calais"],img:P+"vr_a-stpaulin21-400x300.jpg"},
+  {nom:"Sainte-Maure",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Poitou-Charentes"],img:P+"saintemaurenonaop-400x300.jpg"},
+  {nom:"Sainte-Maure-de-Touraine",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Centre"],img:P+"vr_saintemauretouraine-400x300.jpg"},
+  {nom:"Salers",fam:'Les "Authentiques"',lait:"Vache",reg:["Auvergne"],img:P+"vr_salers-400x300.jpg"},
+  {nom:"Selles-sur-Cher",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Centre"],img:P+"vr_sellesurcher-400x300.jpg"},
+  {nom:"Soumaintrain",fam:'Les "Authentiques"',lait:"Vache",reg:["Bourgogne","Champagne-Ardenne"],img:P+"soumaintrain-400x300.jpg"},
+  {nom:"Tome des Bauges",fam:'Les "Authentiques"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"vr_tomebauges-400x300.jpg"},
+  {nom:"Tomme de Savoie",fam:'Les "Authentiques"',lait:"Vache",reg:["Rhône-Alpes"],img:P+"tomesavoie-400x300.jpg"},
+  {nom:"Valençay",fam:'Les "Chèvres et Brebis"',lait:"Chèvre",reg:["Centre"],img:P+"vr_valencay-400x300.jpg"},
+  {nom:"Vieux Lille",fam:'Les "Authentiques"',lait:"Vache",reg:["Nord-Pas-de-Calais","Picardie"],img:P+"vr_vieuxlille-400x300.jpg"},
 ];
 
-// Photos locales — placer le dossier photos/ à côté du fichier HTML
-// Générer avec : ./download_fromages.sh
-const FRO_IMGS={
-  "Abbaye de Belloc":         "photos/abbaye_de_belloc.jpg",
-  "Abbaye de Cîteaux":        "photos/abbaye_de_citeaux.jpg",
-  "Abbaye de Tamié":          "photos/abbaye_de_citeaux.jpg",
-  "Abondance":                "photos/abondance.jpg",
-  "Banon":                    "photos/banon.jpg",
-  "Beaufort":                 "photos/beaufort.jpg",
-  "Bleu d'Auvergne":          "photos/bleu_d_auvergne.jpg",
-  "Bleu de Gex":              "photos/bleu_de_gex.jpg",
-  "Bleu de Laqueuille":       "photos/bleu_d_auvergne.jpg",
-  "Bleu des Causses":         "photos/bleu_des_causses.jpg",
-  "Bleu du Vercors-Sassenage":"photos/bleu_du_vercors.jpg",
-  "Boulette d'Avesnes":       "photos/boulette_d_avesnes.jpg",
-  "Brie":                     "photos/brie.jpg",
-  "Brie de Meaux":            "photos/brie_de_meaux.jpg",
-  "Brie de Melun":            "photos/brie_de_melun.jpg",
-  "Brocciu":                  "photos/brocciu.jpg",
-  "Camembert":                "photos/camembert.jpg",
-  "Camembert de Normandie":   "photos/camembert_de_normandie.jpg",
-  "Cantal":                   "photos/cantal.jpg",
-  "Chabichou du Poitou":      "photos/chabichou_du_poitou.jpg",
-  "Chaource":                 "photos/chaource.jpg",
-  "Charolais":                "photos/charolais.jpg",
-  "Comté":                    "photos/comte.jpg",
-  "Coulommiers":              "photos/coulommiers.jpg",
-  "Emmental":                 "photos/emmental.jpg",
-  "Emmental de Savoie (IGP)": "photos/emmental.jpg",
-  "Époisses":                 "photos/epoisses.jpg",
-  "Fourme d'Ambert":          "photos/fourme_d_ambert.jpg",
-  "Fourme de Montbrison":     "photos/fourme_de_montbrison.jpg",
-  "Gruyère":                  "photos/gruyere.jpg",
-  "Laguiole":                 "photos/laguiole.jpg",
-  "Langres":                  "photos/langres.jpg",
-  "Livarot":                  "photos/livarot.jpg",
-  "Mâconnais":                "photos/maconnais.jpg",
-  "Maroilles":                "photos/maroilles.jpg",
-  "Mimolette":                "photos/mimolette.jpg",
-  "Mont-d'Or":                "photos/mont_d_or.jpg",
-  "Morbier":                  "photos/morbier.jpg",
-  "Munster":                  "photos/munster.jpg",
-  "Neufchâtel":               "photos/neufchatel.jpg",
-  "Ossau-Iraty":              "photos/ossau_iraty.jpg",
-  "Ossau fermier":            "photos/ossau_iraty.jpg",
-  "Pélardon":                 "photos/pelardon.jpg",
-  "Pérail":                   "photos/roquefort.jpg",
-  "Picodon":                  "photos/picodon.jpg",
-  "Pont-l'Évêque":            "photos/pont_l_eveque.jpg",
-  "Pouligny Saint-Pierre":    "photos/pouligny_saint_pierre.jpg",
-  "Raclette":                 "photos/raclette.jpg",
-  "Reblochon":                "photos/reblochon.jpg",
-  "Rigotte de Condrieu":      "photos/picodon.jpg",
-  "Rocamadour":               "photos/rocamadour.jpg",
-  "Roquefort":                "photos/roquefort.jpg",
-  "Saint Agur":               "photos/saint_agur.jpg",
-  "Saint-Marcellin":          "photos/saint_marcellin.jpg",
-  "Saint-Nectaire":           "photos/saint_nectaire.jpg",
-  "Sainte-Maure":             "photos/sainte_maure_de_touraine.jpg",
-  "Sainte-Maure-de-Touraine": "photos/sainte_maure_de_touraine.jpg",
-  "Salers":                   "photos/salers.jpg",
-  "Selles-sur-Cher":          "photos/selles_sur_cher.jpg",
-  "Tome des Bauges":          "photos/tome_des_bauges.jpg",
-  "Tomme de Savoie":          "photos/tomme_de_savoie.jpg",
-  "Valençay":                 "photos/valencay.jpg",
-  "Vieux Lille":              "photos/vieux_lille.jpg",
-};
-
-function getFroImg(nom){return FRO_IMGS[nom]||null}
+function getFroImg(q){return q.img||null}
 
 let frData=[],frQ=[],frI=0,frScore=0,frStr=0,frLives=3;
 function getFrD(){const f=document.getElementById('fro-fam').value;return f==='all'?FRO:FRO.filter(x=>x.fam===f)}
@@ -900,19 +926,18 @@ function showFro(){
   const q=frQ[frI];
   document.getElementById('fro-fb').className='fb';
   document.getElementById('fro-next').classList.remove('on');
-  // Image
+  document.getElementById('fro-qlabel').textContent=q.reg.length>1?'Quel est ce fromage ? ('+q.reg.length+' régions)':'Quel est ce fromage ?';
   const imgEl=document.getElementById('fro-img');
   const loadEl=document.getElementById('fro-loading');
-  const url=getFroImg(q.nom);
+  const url=getFroImg(q);
   if(url){
     imgEl.style.display='none';loadEl.style.display='flex';loadEl.textContent='Chargement…';
     imgEl.onload=()=>{imgEl.style.display='block';loadEl.style.display='none'};
-    imgEl.onerror=()=>{loadEl.textContent='🧀 '+q.nom.replace(/./g,'?')};
+    imgEl.onerror=()=>{loadEl.textContent='🧀';};
     imgEl.src=url;imgEl.alt=q.nom;
   }else{
-    imgEl.style.display='none';loadEl.style.display='flex';loadEl.textContent='📷 Photo non disponible';
+    imgEl.style.display='none';loadEl.style.display='flex';loadEl.textContent='🧀';
   }
-  // Choices — même famille si possible
   let pool=shuf(FRO.filter(x=>x.fam===q.fam&&x.nom!==q.nom));
   if(pool.length<3)pool=[...pool,...shuf(FRO.filter(x=>x.fam!==q.fam&&x.nom!==q.nom))];
   const opts=shuf([q.nom,...pool.slice(0,3).map(x=>x.nom)]);
@@ -925,13 +950,13 @@ function evalFro(btn,chosen,q,div){
   btn.classList.add(ok?'cor':'wrg');
   if(!ok){div.querySelectorAll('.choice').forEach(b=>{if(b.textContent===q.nom)b.classList.add('cor')});frLives--;frStr=0;playErr()}
   else{frScore++;frStr++;playOk()}
-  // Famille affichée proprement
-  const famClean=q.fam.replace(/Les "(.+)"/,'$1');
+  const famClean=q.fam.replace(/Les "(.+)"/,'$1')||'—';
+  const regTxt=q.reg.length?q.reg.join(' · '):'—';
   const fb=document.getElementById('fro-fb');
   fb.className='fb '+(ok?'cor':'wrg');
   fb.innerHTML=(ok?'<div class="fb-main">✓ '+q.nom+'</div>':'<div class="fb-main">✗ C\'était : '+q.nom+'</div>')
-    +'<div class="fb-line">Famille : '+famClean+'</div>'
-    +'<div class="fb-line">Région : '+q.reg+'</div>'
+    +(q.fam?'<div class="fb-line">Famille : '+famClean+'</div>':'')
+    +(q.reg.length?'<div class="fb-line">Région'+(q.reg.length>1?'s':'')+' : '+regTxt+'</div>':'')
     +'<div class="fb-line">Lait : '+q.lait+'</div>';
   frI++;updFro();document.getElementById('fro-next').classList.add('on');
 }
@@ -940,19 +965,12 @@ function nextFro(){showFro()}
 // ── PARTAGE ──
 function shareScore(pfx,label){
   const score=document.getElementById(pfx+'-escore').textContent;
-  const [got,total]=score.split(' / ').map(Number);
-  const pct=total?got/total:0;
-  const filled=Math.round(pct*10);
-  const squares=Array.from({length:10},(_,i)=>i<filled?'🟩':'🟥').join('');
-  const text=label+'\n'+squares;
+  const text=label+'\n'+score;
   const toast=document.getElementById(pfx+'-toast');
-
-  // Tentative navigator.share (mobile HTTPS)
   if(navigator.share&&location.protocol==='https:'){
     navigator.share({title:'Quiz',text}).catch(()=>showShareModal(text));
     return;
   }
-  // Tentative clipboard (HTTPS ou localhost)
   if(navigator.clipboard&&(location.protocol==='https:'||location.hostname==='localhost')){
     navigator.clipboard.writeText(text).then(()=>{
       toast.textContent='✓ Copié !';
@@ -960,7 +978,6 @@ function shareScore(pfx,label){
     }).catch(()=>showShareModal(text));
     return;
   }
-  // Fallback universel : modal
   showShareModal(text);
 }
 
@@ -985,6 +1002,183 @@ function showShareModal(text){
   ta.value=text;
   ta.rows=text.split('\n').length+1;
 }
+
+// ═══════════════════════════════════════════════
+// DATA — VINS
+// ═══════════════════════════════════════════════
+const VIN=[
+  // Champagne
+  {a:"Montagne de Reims",r:"Champagne"},{a:"Vallée de la Marne",r:"Champagne"},
+  {a:"Côte des Blancs",r:"Champagne"},{a:"Bar-séquanais",r:"Champagne"},
+  {a:"Bar-sur-Aubois",r:"Champagne"},
+  // Lorraine
+  {a:"Vins de Moselle",r:"Lorraine"},{a:"Côte de Toul",r:"Lorraine"},
+  // Alsace
+  {a:"Alsace",r:"Alsace"},{a:"Alsace Grand Cru",r:"Alsace"},
+  // Vallée de la Loire
+  {a:"Muscadet",r:"Vallée de la Loire"},{a:"Gros Plant du Pays Nantais",r:"Vallée de la Loire"},
+  {a:"Anjou",r:"Vallée de la Loire"},{a:"Saumur",r:"Vallée de la Loire"},
+  {a:"Touraine",r:"Vallée de la Loire"},{a:"Vouvray",r:"Vallée de la Loire"},
+  {a:"Chinon",r:"Vallée de la Loire"},{a:"Sancerre",r:"Vallée de la Loire"},
+  {a:"Pouilly-Fumé",r:"Vallée de la Loire"},{a:"Pouilly-sur-Loire",r:"Vallée de la Loire"},
+  {a:"Menetou-Salon",r:"Vallée de la Loire"},{a:"Quincy",r:"Vallée de la Loire"},
+  {a:"Reuilly",r:"Vallée de la Loire"},{a:"Coteaux du Vendômois",r:"Vallée de la Loire"},
+  {a:"Côtes de Gien",r:"Vallée de la Loire"},{a:"Châteaumeillant",r:"Vallée de la Loire"},
+  // Bourgogne
+  {a:"Chablis",r:"Bourgogne"},{a:"Coteaux de l'Auxerrois",r:"Bourgogne"},
+  {a:"Côte de Nuits",r:"Bourgogne"},{a:"Hautes Côtes de Nuits",r:"Bourgogne"},
+  {a:"Côte de Beaune",r:"Bourgogne"},{a:"Hautes Côtes de Beaune",r:"Bourgogne"},
+  {a:"Côte Chalonnaise",r:"Bourgogne"},{a:"Mercurey",r:"Bourgogne"},
+  {a:"Mâconnais",r:"Bourgogne"},{a:"Mâcon Villages",r:"Bourgogne"},
+  {a:"Beaujolais",r:"Bourgogne"},{a:"Beaujolais Villages",r:"Bourgogne"},
+  {a:"Coteaux du Lyonnais",r:"Bourgogne"},
+  // Jura
+  {a:"Côtes du Jura",r:"Jura"},{a:"Arbois",r:"Jura"},
+  {a:"Château-Chalon",r:"Jura"},{a:"L'Étoile",r:"Jura"},
+  // Savoie et Bugey
+  {a:"Vin du Bugey",r:"Savoie et Bugey"},{a:"Vin de Savoie",r:"Savoie et Bugey"},
+  {a:"Crépy",r:"Savoie et Bugey"},{a:"Roussette de Savoie",r:"Savoie et Bugey"},
+  {a:"Seyssel",r:"Savoie et Bugey"},
+  // Auvergne et Forez
+  {a:"Saint-Pourçain",r:"Auvergne et Forez"},{a:"Côtes d'Auvergne",r:"Auvergne et Forez"},
+  {a:"Côte Roannaise",r:"Auvergne et Forez"},{a:"Côtes du Forez",r:"Auvergne et Forez"},
+  // Bordelais
+  {a:"Médoc",r:"Bordelais"},{a:"Haut-Médoc",r:"Bordelais"},
+  {a:"Listrac",r:"Bordelais"},{a:"Moulis",r:"Bordelais"},
+  {a:"Saint-Estèphe",r:"Bordelais"},{a:"Pauillac",r:"Bordelais"},
+  {a:"Saint-Julien",r:"Bordelais"},{a:"Margaux",r:"Bordelais"},
+  {a:"Graves",r:"Bordelais"},{a:"Bordeaux",r:"Bordelais"},
+  {a:"Cérons",r:"Bordelais"},{a:"Barsac",r:"Bordelais"},
+  {a:"Sauternes",r:"Bordelais"},{a:"Pomerol",r:"Bordelais"},
+  {a:"Saint-Émilion",r:"Bordelais"},{a:"Fronsac",r:"Bordelais"},
+  {a:"Côtes de Blaye",r:"Bordelais"},{a:"Côtes de Bourg",r:"Bordelais"},
+  {a:"Entre-Deux-Mers",r:"Bordelais"},{a:"Sainte-Foy-Bordeaux",r:"Bordelais"},
+  // Cognac et Pineau des Charentes
+  {a:"Grande Champagne",r:"Cognac et Pineau des Charentes"},
+  {a:"Petite Champagne",r:"Cognac et Pineau des Charentes"},
+  {a:"Borderies",r:"Cognac et Pineau des Charentes"},
+  {a:"Fins Bois",r:"Cognac et Pineau des Charentes"},
+  {a:"Bons Bois",r:"Cognac et Pineau des Charentes"},
+  {a:"Pineau des Charentes",r:"Cognac et Pineau des Charentes"},
+  // Armagnac
+  {a:"Bas Armagnac",r:"Armagnac"},{a:"Ténarèze",r:"Armagnac"},
+  {a:"Haut-Armagnac",r:"Armagnac"},
+  // Béarn et vallée de l'Adour
+  {a:"Tursan",r:"Béarn et vallée de l'Adour"},
+  {a:"Madiran",r:"Béarn et vallée de l'Adour"},
+  {a:"Pacherenc du Vic-Bilh",r:"Béarn et vallée de l'Adour"},
+  {a:"Côtes de Saint-Mont",r:"Béarn et vallée de l'Adour"},
+  {a:"Irouléguy",r:"Béarn et vallée de l'Adour"},
+  {a:"Béarn",r:"Béarn et vallée de l'Adour"},
+  {a:"Jurançon",r:"Béarn et vallée de l'Adour"},
+  // Sud-Ouest
+  {a:"Montravel",r:"Sud-Ouest"},{a:"Bergerac",r:"Sud-Ouest"},
+  {a:"Pécharmant",r:"Sud-Ouest"},{a:"Saussignac",r:"Sud-Ouest"},
+  {a:"Monbazillac",r:"Sud-Ouest"},{a:"Côtes de Duras",r:"Sud-Ouest"},
+  {a:"Côtes du Marmandais",r:"Sud-Ouest"},{a:"Buzet",r:"Sud-Ouest"},
+  {a:"Côtes du Brulhois",r:"Sud-Ouest"},{a:"Cahors",r:"Sud-Ouest"},
+  {a:"Lavilledieu",r:"Sud-Ouest"},{a:"Côtes du Frontonnais",r:"Sud-Ouest"},
+  {a:"Gaillac",r:"Sud-Ouest"},{a:"Entraygues",r:"Sud-Ouest"},
+  {a:"Marcillac",r:"Sud-Ouest"},{a:"Estaing",r:"Sud-Ouest"},
+  // Languedoc-Roussillon
+  {a:"Banyuls",r:"Languedoc-Roussillon"},{a:"Collioure",r:"Languedoc-Roussillon"},
+  {a:"Rivesaltes",r:"Languedoc-Roussillon"},{a:"Maury",r:"Languedoc-Roussillon"},
+  {a:"Muscat de Saint-Jean de Minervois",r:"Languedoc-Roussillon"},
+  {a:"Muscat de Frontignan",r:"Languedoc-Roussillon"},
+  {a:"Muscat de Minerval",r:"Languedoc-Roussillon"},
+  {a:"Muscat de Lunel",r:"Languedoc-Roussillon"},
+  {a:"Côtes du Roussillon",r:"Languedoc-Roussillon"},{a:"Fitou",r:"Languedoc-Roussillon"},
+  {a:"Blanquette de Limoux",r:"Languedoc-Roussillon"},
+  {a:"Côtes de la Malepère",r:"Languedoc-Roussillon"},
+  {a:"Cabardès",r:"Languedoc-Roussillon"},{a:"Minervois",r:"Languedoc-Roussillon"},
+  {a:"Corbières",r:"Languedoc-Roussillon"},
+  {a:"Saint-Chinian",r:"Languedoc-Roussillon"},
+  {a:"Coteaux du Languedoc",r:"Languedoc-Roussillon"},
+  {a:"Coteaux de la Méjanelle",r:"Languedoc-Roussillon"},
+  {a:"Picpoul de Pinet",r:"Languedoc-Roussillon"},
+  {a:"Costières du Gard",r:"Languedoc-Roussillon"},
+  {a:"Clairette de Bellegarde",r:"Languedoc-Roussillon"},
+  // Vallée du Rhône
+  {a:"Côte Rôtie",r:"Vallée du Rhône"},{a:"Condrieu",r:"Vallée du Rhône"},
+  {a:"Château-Grillet",r:"Vallée du Rhône"},{a:"Côtes du Rhône",r:"Vallée du Rhône"},
+  {a:"Saint-Joseph",r:"Vallée du Rhône"},{a:"Hermitage",r:"Vallée du Rhône"},
+  {a:"Crozes-Hermitages",r:"Vallée du Rhône"},{a:"Cornas",r:"Vallée du Rhône"},
+  {a:"Saint-Péray",r:"Vallée du Rhône"},{a:"Clairette de Die",r:"Vallée du Rhône"},
+  {a:"Châtillon en Diois",r:"Vallée du Rhône"},{a:"Côtes du Vivarais",r:"Vallée du Rhône"},
+  {a:"Coteaux du Tricastin",r:"Vallée du Rhône"},
+  {a:"Côtes du Rhône Villages",r:"Vallée du Rhône"},
+  {a:"Rasteau",r:"Vallée du Rhône"},{a:"Gigondas",r:"Vallée du Rhône"},
+  {a:"Beaumes-de-Venise",r:"Vallée du Rhône"},
+  {a:"Châteauneuf-du-Pape",r:"Vallée du Rhône"},
+  {a:"Lirac",r:"Vallée du Rhône"},{a:"Tavel",r:"Vallée du Rhône"},
+  {a:"Côtes du Ventoux",r:"Vallée du Rhône"},
+  // Provence
+  {a:"Coteaux d'Aix-en-Provence",r:"Provence"},
+  {a:"Palette",r:"Provence"},{a:"Côtes du Lubéron",r:"Provence"},
+  {a:"Coteaux de Pierrevert",r:"Provence"},
+  {a:"Côtes de Provence",r:"Provence"},
+  {a:"Coteaux d'Aix-en-Provence",r:"Provence"},
+  {a:"Cassis",r:"Provence"},{a:"Bandol",r:"Provence"},
+  {a:"Coteaux Varois",r:"Provence"},{a:"Bellet",r:"Provence"},
+  // Corse
+  {a:"Vin de Corse",r:"Corse"},{a:"Coteaux du Cap Corse",r:"Corse"},
+  {a:"Patrimonio",r:"Corse"},{a:"Calvi",r:"Corse"},
+  {a:"Ajaccio",r:"Corse"},{a:"Sartène",r:"Corse"},
+  {a:"Figari",r:"Corse"},{a:"Porto-Vecchio",r:"Corse"},
+];
+
+let vData=[],vQ=[],vI=0,vScore=0,vStr=0,vLives=3;
+
+function initVin(){
+  const sel=document.getElementById('vin-reg');
+  const regs=[...new Set(VIN.map(x=>x.r))].sort();
+  sel.innerHTML='<option value="all">Toutes les régions</option>';
+  regs.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o)});
+}
+
+function getVD(){const r=document.getElementById('vin-reg').value;return r==='all'?VIN:VIN.filter(x=>x.r===r)}
+
+function resetVin(){
+  vData=getVD();vQ=shuf(vData);vI=0;vScore=0;vStr=0;vLives=3;
+  document.getElementById('vin-end').classList.remove('on');
+  document.getElementById('vin-game').style.display='';
+  document.getElementById('vin-total').textContent=vQ.length;
+  updVin();showVin();
+}
+
+function updVin(){
+  hearts(document.getElementById('vin-hearts'),vLives);
+  document.getElementById('vin-score').textContent=vScore;
+  document.getElementById('vin-streak').textContent=vStr>=3?'🔥 ×'+vStr:'';
+  document.getElementById('vin-prog').style.width=(vQ.length?vI/vQ.length*100:0)+'%';
+}
+
+function showVin(){
+  if(vI>=vQ.length||vLives<=0){endScreen('vin',vI,vScore);return}
+  const q=vQ[vI];
+  document.getElementById('vin-appellation').textContent=q.a;
+  document.getElementById('vin-fb').className='fb';
+  document.getElementById('vin-next').classList.remove('on');
+  // Distracteurs de régions différentes
+  const allRegs=[...new Set(VIN.map(x=>x.r).filter(r=>r!==q.r))];
+  const pool=shuf(allRegs).slice(0,3);
+  const opts=shuf([q.r,...pool]);
+  const div=document.getElementById('vin-choices');div.innerHTML='';
+  opts.forEach(o=>{const b=document.createElement('button');b.className='choice';b.textContent=o;b.onclick=()=>evalVin(b,o,q,div);div.appendChild(b)});
+}
+
+function evalVin(btn,chosen,q,div){
+  div.querySelectorAll('.choice').forEach(b=>b.disabled=true);
+  const ok=chosen===q.r;
+  btn.classList.add(ok?'cor':'wrg');
+  if(!ok){div.querySelectorAll('.choice').forEach(b=>{if(b.textContent===q.r)b.classList.add('cor')});vLives--;vStr=0;playErr()}
+  else{vScore++;vStr++;playOk()}
+  const fb=document.getElementById('vin-fb');
+  fb.className='fb '+(ok?'cor':'wrg');
+  fb.innerHTML=ok?'<div class="fb-main">✓ '+q.r+'</div>':'<div class="fb-main">✗ '+q.r+'</div>';
+  vI++;updVin();document.getElementById('vin-next').classList.add('on');
+}
+function nextVin(){showVin()}
 
 // ── INIT ──
 initDep();resetCap();resetDep();resetCha();resetFro();
