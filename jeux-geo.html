@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Géo Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #2a1a0e;
+  --ink-2: #5c3a1e;
+  --ink-3: #c49060;
+  --orange: #d4601a;
+  --orange-light: #fce8d8;
+  --orange-mid: #e8854a;
+  --brown: #7a3b10;
+  --brown-dark: #4a2008;
+  --correct: #3a6b2a;
+  --correct-bg: #dff0d4;
+  --wrong: #9b2a1a;
+  --wrong-bg: #fde8e0;
+  --r: 12px;
+  --r-sm: 8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'DM Sans',sans-serif;
+  color:#fdf6ee;
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:2rem 1.25rem 3rem;
+  background: radial-gradient(ellipse 120% 60% at 30% 20%, #c4521200 0%, #7a3b10 45%, #4a2008 100%),
+              linear-gradient(160deg, #a04010 0%, #6a2e08 40%, #3a1804 100%);
+}
+
+/* HEADER */
+.hdr{text-align:center;margin-bottom:1.75rem}
+.hdr-eye{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--orange-mid);font-weight:500;margin-bottom:.35rem}
+.hdr h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,5vw,2.5rem);font-weight:400;line-height:1.1;color:#fdf6ee}
+.hdr h1 em{font-style:italic;color:var(--orange-mid)}
+
+/* TABS */
+.tabs{display:flex;gap:0;margin-bottom:1.75rem;border:1.5px solid rgba(255,255,255,.15);border-radius:40px;padding:3px;background:rgba(0,0,0,.2)}
+.tab{padding:8px 18px;border-radius:36px;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:400;color:rgba(253,246,238,.6);transition:all .2s;white-space:nowrap}
+.tab.active{background:var(--orange);color:white;font-weight:500;box-shadow:0 2px 10px rgba(212,96,26,.4)}
+
+/* PANEL */
+.panel{display:none;width:100%;max-width:540px}
+.panel.on{display:block}
+
+/* FILTERS */
+.filters{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.fl{font-size:.75rem;color:rgba(253,246,238,.5)}
+select{
+  padding:5px 26px 5px 10px;border-radius:20px;
+  border:1.5px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);
+  font-family:'DM Sans',sans-serif;font-size:.8rem;color:#fdf6ee;
+  cursor:pointer;outline:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23fdf6ee' stroke-width='1.5' fill='none' stroke-linecap='round' opacity='.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center
+}
+select option{background:#5c2a0a;color:#fdf6ee}
+.mtog{padding:5px 12px;border-radius:20px;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);background:rgba(0,0,0,.2);font-family:'DM Sans',sans-serif;font-size:.8rem;color:rgba(253,246,238,.7);transition:all .18s}
+.mtog.on{background:var(--orange);color:white;border-color:var(--orange)}
+
+/* HUD */
+.hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+.hud-lives{display:flex;gap:4px}
+.hud-score{font-size:.8rem;color:rgba(253,246,238,.6)}
+.hud-score strong{color:#fdf6ee;font-weight:500}
+.hud-streak{font-size:.8rem;color:var(--orange-mid);font-weight:500;min-width:44px;text-align:right}
+
+/* PROGRESS */
+.prog{height:3px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden;margin-bottom:1rem}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--orange-mid),#f0a060);border-radius:2px;transition:width .4s ease}
+
+/* QUESTION CARD */
+.qcard{
+  background:rgba(255,255,255,.97);border-radius:var(--r);padding:1.25rem 1.5rem 1.1rem;
+  border:none;margin-bottom:.7rem;
+  position:relative;overflow:hidden;
+  box-shadow:0 4px 20px rgba(42,26,14,.35)
+}
+.qcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--brown),var(--orange),var(--orange-mid),var(--orange),var(--brown))}
+.qlabel{font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.5rem;font-weight:500}
+.qtext{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,4vw,1.85rem);font-weight:400;line-height:1.2;color:var(--ink)}
+.qzone{font-size:.74rem;color:var(--ink-3);margin-top:.4rem;display:flex;align-items:center;gap:5px}
+.qzone:not(:empty)::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--orange);flex-shrink:0}
+
+/* CHOICES */
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.choice{
+  padding:.7rem .9rem;border-radius:var(--r-sm);
+  border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  font-size:.86rem;font-weight:400;color:#fdf6ee;
+  text-align:left;line-height:1.3;
+  transition:border-color .14s,background .14s,transform .1s;
+  backdrop-filter:blur(4px)
+}
+.choice:not([disabled]):hover{border-color:var(--orange-mid);background:rgba(232,133,74,.25);transform:translateY(-1px)}
+.choice:not([disabled]):active{transform:translateY(0)}
+.choice.cor{background:var(--correct-bg);border-color:var(--correct);color:var(--correct);font-weight:500}
+.choice.wrg{background:var(--wrong-bg);border-color:var(--wrong);color:var(--wrong)}
+.choice[disabled]{cursor:default}
+
+/* FEEDBACK */
+.fb{border-radius:var(--r-sm);padding:.7rem 1rem;font-size:.84rem;line-height:1.5;margin-top:.6rem;display:none;animation:slin .2s ease}
+@keyframes slin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fb.cor{background:var(--correct-bg);color:var(--correct);display:block}
+.fb.wrg{background:var(--wrong-bg);color:var(--wrong);display:block}
+.fb-main{font-weight:500}
+.fb-detail{opacity:.75;margin-top:2px;font-size:.78rem}
+
+/* NEXT */
+.nbtn{width:100%;margin-top:.6rem;padding:10px;border-radius:var(--r-sm);border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:500;cursor:pointer;color:rgba(253,246,238,.85);transition:all .18s;display:none;letter-spacing:.01em;backdrop-filter:blur(4px)}
+.nbtn.on{display:block}
+.nbtn:hover{background:var(--orange);color:white;border-color:var(--orange)}
+
+/* END */
+.end{background:rgba(255,255,255,.97);border-radius:var(--r);border:none;box-shadow:0 4px 28px rgba(42,26,14,.4);padding:2.5rem 2rem;text-align:center;display:none;position:relative;overflow:hidden}
+.end::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--brown),var(--orange),var(--orange-mid),var(--orange),var(--brown))}
+.end.on{display:block;animation:slin .3s ease}
+.end-eye{font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);font-weight:500;margin-bottom:.6rem}
+.end-score{font-family:'Playfair Display',serif;font-size:3.2rem;font-weight:400;color:var(--ink);line-height:1}
+.end-pct{font-size:.9rem;color:var(--ink-3);margin-top:.4rem}
+.end-msg{font-size:.88rem;color:var(--ink-2);margin-top:.6rem}
+.rbtn{margin-top:1.5rem;padding:10px 26px;border-radius:40px;background:var(--orange);color:white;border:none;font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:500;cursor:pointer;transition:background .18s;letter-spacing:.02em}
+.rbtn:hover{background:var(--brown)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-eye">Quiz de géographie</div>
+  <h1>Géo <em>Quiz</em></h1>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('cap')">🌍&nbsp; Capitales du monde</button>
+  <button class="tab" onclick="switchTab('dep')">🗺&nbsp; Départements</button>
+</div>
+
+<!-- ══ CAPITALES ══ -->
+<div id="panel-cap" class="panel on">
+  <div class="filters">
+    <span class="fl">Zone</span>
+    <select id="cap-zone" onchange="resetCap()">
+      <option value="all">Toutes les zones</option>
+      <option value="AFRIQUE">Afrique</option>
+      <option value="AMÉRIQUES">Amériques</option>
+      <option value="ASIE">Asie</option>
+      <option value="EUROPE">Europe</option>
+      <option value="OCÉANIE">Océanie</option>
+    </select>
+    <span class="fl">Pays</span>
+    <select id="cap-pop" onchange="resetCap()">
+      <option value="0">Tous les pays</option>
+      <option value="5">5 M+ hab.</option>
+      <option value="10">10 M+ hab.</option>
+      <option value="20">20 M+ hab.</option>
+      <option value="50">50 M+ hab.</option>
+    </select>
+  </div>
+
+  <div class="hud">
+    <div class="hud-lives" id="cap-hearts"></div>
+    <div class="hud-score">Score&thinsp;: <strong id="cap-score">0</strong>&thinsp;/&thinsp;<span id="cap-total">0</span></div>
+    <div class="hud-streak" id="cap-streak"></div>
+  </div>
+  <div class="prog"><div class="prog-fill" id="cap-prog" style="width:0%"></div></div>
+
+  <div id="cap-game">
+    <div class="qcard">
+      <div class="qlabel">Quelle est la capitale de…</div>
+      <div class="qtext" id="cap-pays">—</div>
+      <div class="qzone" id="cap-z"></div>
+    </div>
+    <div class="choices" id="cap-choices"></div>
+    <div class="fb" id="cap-fb"></div>
+    <button class="nbtn" id="cap-next" onclick="nextCap()">Question suivante →</button>
+  </div>
+
+  <div class="end" id="cap-end">
+    <div class="end-eye">Partie terminée</div>
+    <div class="end-score" id="cap-escore"></div>
+    <div class="end-pct" id="cap-epct"></div>
+    <div class="end-msg" id="cap-emsg"></div>
+    <button class="rbtn" onclick="resetCap()">Rejouer</button>
+  </div>
+</div>
+
+<!-- ══ DÉPARTEMENTS ══ -->
+<div id="panel-dep" class="panel">
+  <div class="filters">
+    <span class="fl">Région</span>
+    <select id="dep-reg" onchange="resetDep()"></select>
+    <button class="mtog on" id="dep-mtog" onclick="toggleDepMode()">N° → Département</button>
+  </div>
+
+  <div class="hud">
+    <div class="hud-lives" id="dep-hearts"></div>
+    <div class="hud-score">Score&thinsp;: <strong id="dep-score">0</strong>&thinsp;/&thinsp;<span id="dep-total">0</span></div>
+    <div class="hud-streak" id="dep-streak"></div>
+  </div>
+  <div class="prog"><div class="prog-fill" id="dep-prog" style="width:0%"></div></div>
+
+  <div id="dep-game">
+    <div class="qcard">
+      <div class="qlabel" id="dep-qlabel">Quel département correspond au numéro…</div>
+      <div class="qtext" id="dep-qtext">—</div>
+      <div class="qzone" id="dep-qzone"></div>
+    </div>
+    <div class="choices" id="dep-choices"></div>
+    <div class="fb" id="dep-fb"></div>
+    <button class="nbtn" id="dep-next" onclick="nextDep()">Question suivante →</button>
+  </div>
+
+  <div class="end" id="dep-end">
+    <div class="end-eye">Partie terminée</div>
+    <div class="end-score" id="dep-escore"></div>
+    <div class="end-pct" id="dep-epct"></div>
+    <div class="end-msg" id="dep-emsg"></div>
+    <button class="rbtn" onclick="resetDep()">Rejouer</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const CAP = [
+  {p:"Égypte",c:"Le Caire",pop:111,z:"AFRIQUE"},
+  {p:"Soudan",c:"Khartoum",pop:46.9,z:"AFRIQUE"},
+  {p:"Algérie",c:"Alger",pop:44.9,z:"AFRIQUE"},
+  {p:"Maroc",c:"Rabat",pop:37.5,z:"AFRIQUE"},
+  {p:"Tunisie",c:"Tunis",pop:12.4,z:"AFRIQUE"},
+  {p:"Libye",c:"Tripoli",pop:6.8,z:"AFRIQUE"},
+  {p:"Afrique du Sud",c:"Pretoria",pop:59.9,z:"AFRIQUE"},
+  {p:"Botswana",c:"Gaborone",pop:2.6,z:"AFRIQUE"},
+  {p:"Namibie",c:"Windhoek",pop:2.6,z:"AFRIQUE"},
+  {p:"Lesotho",c:"Maseru",pop:2.3,z:"AFRIQUE"},
+  {p:"Eswatini",c:"Mbabane",pop:1.2,z:"AFRIQUE"},
+  {p:"Congo (Rép. dém.)",c:"Kinshasa",pop:99,z:"AFRIQUE"},
+  {p:"Angola",c:"Luanda",pop:35.6,z:"AFRIQUE"},
+  {p:"Cameroun",c:"Yaoundé",pop:27.9,z:"AFRIQUE"},
+  {p:"Tchad",c:"N'Djamena",pop:17.7,z:"AFRIQUE"},
+  {p:"Congo",c:"Brazzaville",pop:6,z:"AFRIQUE"},
+  {p:"Centrafrique",c:"Bangui",pop:5.6,z:"AFRIQUE"},
+  {p:"Gabon",c:"Libreville",pop:2.4,z:"AFRIQUE"},
+  {p:"Nigeria",c:"Abuja",pop:218.5,z:"AFRIQUE"},
+  {p:"Ghana",c:"Accra",pop:33.5,z:"AFRIQUE"},
+  {p:"Côte d'Ivoire",c:"Yamoussoukro",pop:28.2,z:"AFRIQUE"},
+  {p:"Niger",c:"Niamey",pop:26.2,z:"AFRIQUE"},
+  {p:"Burkina Faso",c:"Ouagadougou",pop:22.7,z:"AFRIQUE"},
+  {p:"Mali",c:"Bamako",pop:22.6,z:"AFRIQUE"},
+  {p:"Sénégal",c:"Dakar",pop:17.3,z:"AFRIQUE"},
+  {p:"Guinée",c:"Conakry",pop:13.9,z:"AFRIQUE"},
+  {p:"Bénin",c:"Porto-Novo",pop:13.4,z:"AFRIQUE"},
+  {p:"Togo",c:"Lomé",pop:8.8,z:"AFRIQUE"},
+  {p:"Sierra Leone",c:"Freetown",pop:8.6,z:"AFRIQUE"},
+  {p:"Liberia",c:"Monrovia",pop:5.3,z:"AFRIQUE"},
+  {p:"Mauritanie",c:"Nouakchott",pop:4.7,z:"AFRIQUE"},
+  {p:"Gambie",c:"Banjul",pop:2.7,z:"AFRIQUE"},
+  {p:"Guinée-Bissau",c:"Bissau",pop:2.1,z:"AFRIQUE"},
+  {p:"Cap-Vert",c:"Praia",pop:0.59,z:"AFRIQUE"},
+  {p:"Éthiopie",c:"Addis Abeba",pop:123.4,z:"AFRIQUE"},
+  {p:"Tanzanie",c:"Dodoma",pop:65.5,z:"AFRIQUE"},
+  {p:"Kenya",c:"Nairobi",pop:54,z:"AFRIQUE"},
+  {p:"Ouganda",c:"Kampala",pop:47.2,z:"AFRIQUE"},
+  {p:"Mozambique",c:"Maputo",pop:33,z:"AFRIQUE"},
+  {p:"Madagascar",c:"Antananarivo",pop:29.6,z:"AFRIQUE"},
+  {p:"Malawi",c:"Lilongwe",pop:20.4,z:"AFRIQUE"},
+  {p:"Zambie",c:"Lusaka",pop:20,z:"AFRIQUE"},
+  {p:"Somalie",c:"Mogadiscio",pop:17.6,z:"AFRIQUE"},
+  {p:"Zimbabwe",c:"Harare",pop:16.3,z:"AFRIQUE"},
+  {p:"Rwanda",c:"Kigali",pop:13.8,z:"AFRIQUE"},
+  {p:"Burundi",c:"Bujumbura",pop:12.9,z:"AFRIQUE"},
+  {p:"Soudan du Sud",c:"Juba",pop:10.9,z:"AFRIQUE"},
+  {p:"Érythrée",c:"Asmara",pop:3.7,z:"AFRIQUE"},
+  {p:"Maurice",c:"Port Louis",pop:1.3,z:"AFRIQUE"},
+  {p:"Djibouti",c:"Djibouti",pop:1.1,z:"AFRIQUE"},
+  {p:"Comores",c:"Moroni",pop:0.84,z:"AFRIQUE"},
+  {p:"Mexique",c:"Mexico City",pop:127.5,z:"AMÉRIQUES"},
+  {p:"Guatemala",c:"Guatemala-Ville",pop:17.8,z:"AMÉRIQUES"},
+  {p:"Honduras",c:"Tegucigalpa",pop:10.4,z:"AMÉRIQUES"},
+  {p:"Nicaragua",c:"Managua",pop:6.9,z:"AMÉRIQUES"},
+  {p:"Salvador",c:"San Salvador",pop:6.3,z:"AMÉRIQUES"},
+  {p:"Costa Rica",c:"San José",pop:5.2,z:"AMÉRIQUES"},
+  {p:"Panama",c:"Ville de Panama",pop:4.4,z:"AMÉRIQUES"},
+  {p:"Brésil",c:"Brasilia",pop:215.3,z:"AMÉRIQUES"},
+  {p:"Colombie",c:"Bogota",pop:51.9,z:"AMÉRIQUES"},
+  {p:"Argentine",c:"Buenos Aires",pop:45.5,z:"AMÉRIQUES"},
+  {p:"Pérou",c:"Lima",pop:34,z:"AMÉRIQUES"},
+  {p:"Venezuela",c:"Caracas",pop:28.3,z:"AMÉRIQUES"},
+  {p:"Chili",c:"Santiago",pop:19.6,z:"AMÉRIQUES"},
+  {p:"Équateur",c:"Quito",pop:18,z:"AMÉRIQUES"},
+  {p:"Bolivie",c:"Sucre",pop:12.2,z:"AMÉRIQUES"},
+  {p:"Paraguay",c:"Asunción",pop:6.8,z:"AMÉRIQUES"},
+  {p:"Uruguay",c:"Montevideo",pop:3.4,z:"AMÉRIQUES"},
+  {p:"Guyana",c:"Georgetown",pop:0.81,z:"AMÉRIQUES"},
+  {p:"Surinam",c:"Paramaribo",pop:0.62,z:"AMÉRIQUES"},
+  {p:"Haïti",c:"Port-au-Prince",pop:11.6,z:"AMÉRIQUES"},
+  {p:"Cuba",c:"La Havane",pop:11.2,z:"AMÉRIQUES"},
+  {p:"Rép. dominicaine",c:"Saint-Domingue",pop:11.2,z:"AMÉRIQUES"},
+  {p:"Jamaïque",c:"Kingston",pop:2.8,z:"AMÉRIQUES"},
+  {p:"Trinidad et Tobago",c:"Port-of-Spain",pop:1.5,z:"AMÉRIQUES"},
+  {p:"Bahamas",c:"Nassau",pop:0.41,z:"AMÉRIQUES"},
+  {p:"Barbade",c:"Bridgetown",pop:0.28,z:"AMÉRIQUES"},
+  {p:"États-Unis",c:"Washington D.C.",pop:338.3,z:"AMÉRIQUES"},
+  {p:"Canada",c:"Ottawa",pop:38.5,z:"AMÉRIQUES"},
+  {p:"Ouzbékistan",c:"Tachkent",pop:34.6,z:"ASIE"},
+  {p:"Kazakhstan",c:"Nursultan",pop:19.4,z:"ASIE"},
+  {p:"Tadjikistan",c:"Douchanbé",pop:10,z:"ASIE"},
+  {p:"Kirghizistan",c:"Bichkek",pop:6.6,z:"ASIE"},
+  {p:"Turkménistan",c:"Achgabat",pop:6.4,z:"ASIE"},
+  {p:"Indonésie",c:"Jakarta",pop:275.5,z:"ASIE"},
+  {p:"Philippines",c:"Manille",pop:115.6,z:"ASIE"},
+  {p:"Viêt Nam",c:"Hanoï",pop:98.2,z:"ASIE"},
+  {p:"Thaïlande",c:"Bangkok",pop:71.7,z:"ASIE"},
+  {p:"Myanmar",c:"Nay Pyi Taw",pop:54.2,z:"ASIE"},
+  {p:"Malaisie",c:"Kuala Lumpur",pop:33.9,z:"ASIE"},
+  {p:"Cambodge",c:"Phnom Penh",pop:16.8,z:"ASIE"},
+  {p:"Laos",c:"Vientiane",pop:7.5,z:"ASIE"},
+  {p:"Singapour",c:"Singapour",pop:6,z:"ASIE"},
+  {p:"Timor oriental",c:"Dili",pop:1.3,z:"ASIE"},
+  {p:"Brunei",c:"Bandar Seri Begawan",pop:0.45,z:"ASIE"},
+  {p:"Inde",c:"New Delhi",pop:1417.2,z:"ASIE"},
+  {p:"Pakistan",c:"Islamabad",pop:235.8,z:"ASIE"},
+  {p:"Bangladesh",c:"Dhaka",pop:171.2,z:"ASIE"},
+  {p:"Iran",c:"Téhéran",pop:88.6,z:"ASIE"},
+  {p:"Afghanistan",c:"Kaboul",pop:41.1,z:"ASIE"},
+  {p:"Népal",c:"Katmandou",pop:30.5,z:"ASIE"},
+  {p:"Sri Lanka",c:"Colombo",pop:21.8,z:"ASIE"},
+  {p:"Bhoutan",c:"Thimphu",pop:0.78,z:"ASIE"},
+  {p:"Maldives",c:"Malé",pop:0.52,z:"ASIE"},
+  {p:"Turquie",c:"Ankara",pop:85.3,z:"ASIE"},
+  {p:"Irak",c:"Bagdad",pop:44.5,z:"ASIE"},
+  {p:"Arabie saoudite",c:"Riad",pop:36.4,z:"ASIE"},
+  {p:"Yémen",c:"Sanaa",pop:33.7,z:"ASIE"},
+  {p:"Syrie",c:"Damas",pop:22.1,z:"ASIE"},
+  {p:"Jordanie",c:"Amman",pop:11.3,z:"ASIE"},
+  {p:"Azerbaïdjan",c:"Bakou",pop:10.4,z:"ASIE"},
+  {p:"Émirats arabes unis",c:"Abu Dhabi",pop:9.4,z:"ASIE"},
+  {p:"Israël",c:"Jérusalem",pop:9,z:"ASIE"},
+  {p:"Liban",c:"Beyrouth",pop:5.5,z:"ASIE"},
+  {p:"Oman",c:"Mascate",pop:4.6,z:"ASIE"},
+  {p:"Koweït",c:"Ville de Koweït",pop:4.3,z:"ASIE"},
+  {p:"Géorgie",c:"Tbilissi",pop:3.7,z:"ASIE"},
+  {p:"Arménie",c:"Erevan",pop:2.8,z:"ASIE"},
+  {p:"Qatar",c:"Doha",pop:2.7,z:"ASIE"},
+  {p:"Bahreïn",c:"Manama",pop:1.5,z:"ASIE"},
+  {p:"Chypre",c:"Nicosie",pop:1.3,z:"ASIE"},
+  {p:"Chine",c:"Pékin",pop:1425.9,z:"ASIE"},
+  {p:"Japon",c:"Tokyo",pop:124,z:"ASIE"},
+  {p:"Corée du Sud",c:"Séoul",pop:51.8,z:"ASIE"},
+  {p:"Corée du Nord",c:"Pyongyang",pop:26.1,z:"ASIE"},
+  {p:"Taïwan",c:"Taipei",pop:23.9,z:"ASIE"},
+  {p:"Mongolie",c:"Oulan-Bator",pop:3.4,z:"ASIE"},
+  {p:"Italie",c:"Rome",pop:59,z:"EUROPE"},
+  {p:"Espagne",c:"Madrid",pop:47.6,z:"EUROPE"},
+  {p:"Grèce",c:"Athènes",pop:10.4,z:"EUROPE"},
+  {p:"Portugal",c:"Lisbonne",pop:10.3,z:"EUROPE"},
+  {p:"Serbie",c:"Belgrade",pop:7.2,z:"EUROPE"},
+  {p:"Croatie",c:"Zagreb",pop:4,z:"EUROPE"},
+  {p:"Bosnie-Herzégovine",c:"Sarajevo",pop:3.2,z:"EUROPE"},
+  {p:"Albanie",c:"Tirana",pop:2.8,z:"EUROPE"},
+  {p:"Macédoine du Nord",c:"Skopje",pop:2.1,z:"EUROPE"},
+  {p:"Slovénie",c:"Ljubljana",pop:2.1,z:"EUROPE"},
+  {p:"Kosovo",c:"Pristina",pop:1.7,z:"EUROPE"},
+  {p:"Monténégro",c:"Podgorica",pop:0.63,z:"EUROPE"},
+  {p:"Malte",c:"La Valette",pop:0.53,z:"EUROPE"},
+  {p:"Andorre",c:"Andorre-la-Vieille",pop:0.08,z:"EUROPE"},
+  {p:"Allemagne",c:"Berlin",pop:83.4,z:"EUROPE"},
+  {p:"France",c:"Paris",pop:64.6,z:"EUROPE"},
+  {p:"Pays-Bas",c:"Amsterdam",pop:17.6,z:"EUROPE"},
+  {p:"Belgique",c:"Bruxelles",pop:11.7,z:"EUROPE"},
+  {p:"Autriche",c:"Vienne",pop:8.9,z:"EUROPE"},
+  {p:"Suisse",c:"Berne",pop:8.7,z:"EUROPE"},
+  {p:"Luxembourg",c:"Luxembourg",pop:0.65,z:"EUROPE"},
+  {p:"Russie",c:"Moscou",pop:144.7,z:"EUROPE"},
+  {p:"Pologne",c:"Varsovie",pop:39.9,z:"EUROPE"},
+  {p:"Ukraine",c:"Kiev",pop:39.7,z:"EUROPE"},
+  {p:"Roumanie",c:"Bucarest",pop:19.7,z:"EUROPE"},
+  {p:"République tchèque",c:"Prague",pop:10.5,z:"EUROPE"},
+  {p:"Hongrie",c:"Budapest",pop:10,z:"EUROPE"},
+  {p:"Biélorussie",c:"Minsk",pop:9.5,z:"EUROPE"},
+  {p:"Bulgarie",c:"Sofia",pop:6.8,z:"EUROPE"},
+  {p:"Slovaquie",c:"Bratislava",pop:5.6,z:"EUROPE"},
+  {p:"Moldavie",c:"Chișinău",pop:3.3,z:"EUROPE"},
+  {p:"Royaume-Uni",c:"Londres",pop:67.5,z:"EUROPE"},
+  {p:"Suède",c:"Stockholm",pop:10.5,z:"EUROPE"},
+  {p:"Danemark",c:"Copenhague",pop:5.9,z:"EUROPE"},
+  {p:"Finlande",c:"Helsinki",pop:5.5,z:"EUROPE"},
+  {p:"Norvège",c:"Oslo",pop:5.4,z:"EUROPE"},
+  {p:"Irlande",c:"Dublin",pop:5,z:"EUROPE"},
+  {p:"Lituanie",c:"Vilnius",pop:2.8,z:"EUROPE"},
+  {p:"Lettonie",c:"Riga",pop:1.9,z:"EUROPE"},
+  {p:"Estonie",c:"Tallinn",pop:1.3,z:"EUROPE"},
+  {p:"Islande",c:"Reykjavik",pop:0.37,z:"EUROPE"},
+  {p:"Australie",c:"Canberra",pop:26.2,z:"OCÉANIE"},
+  {p:"Papouasie-Nouvelle-Guinée",c:"Port Moresby",pop:10.1,z:"OCÉANIE"},
+  {p:"Nouvelle-Zélande",c:"Wellington",pop:5.2,z:"OCÉANIE"},
+  {p:"Fidji",c:"Suva",pop:0.93,z:"OCÉANIE"},
+  {p:"Îles Salomon",c:"Honiara",pop:0.72,z:"OCÉANIE"},
+  {p:"Vanuatu",c:"Port-Vila",pop:0.33,z:"OCÉANIE"},
+  {p:"Samoa",c:"Apia",pop:0.22,z:"OCÉANIE"},
+  {p:"Tonga",c:"Nuku'alofa",pop:0.11,z:"OCÉANIE"},
+];
+
+const DEP = [
+  {n:"1",nom:"Ain",pref:"Bourg-en-Bresse",reg:"Rhône-Alpes"},
+  {n:"2",nom:"Aisne",pref:"Laon",reg:"Picardie"},
+  {n:"3",nom:"Allier",pref:"Moulins",reg:"Auvergne"},
+  {n:"4",nom:"Alpes-de-Haute-Provence",pref:"Digne-les-Bains",reg:"PACA"},
+  {n:"5",nom:"Hautes-Alpes",pref:"Gap",reg:"PACA"},
+  {n:"6",nom:"Alpes-Maritimes",pref:"Nice",reg:"PACA"},
+  {n:"7",nom:"Ardèche",pref:"Privas",reg:"Rhône-Alpes"},
+  {n:"8",nom:"Ardennes",pref:"Charleville-Mézières",reg:"Champagne-Ardenne"},
+  {n:"9",nom:"Ariège",pref:"Foix",reg:"Midi-Pyrénées"},
+  {n:"10",nom:"Aube",pref:"Troyes",reg:"Champagne-Ardenne"},
+  {n:"11",nom:"Aude",pref:"Carcassonne",reg:"Languedoc-Roussillon"},
+  {n:"12",nom:"Aveyron",pref:"Rodez",reg:"Midi-Pyrénées"},
+  {n:"13",nom:"Bouches-du-Rhône",pref:"Marseille",reg:"PACA"},
+  {n:"14",nom:"Calvados",pref:"Caen",reg:"Basse-Normandie"},
+  {n:"15",nom:"Cantal",pref:"Aurillac",reg:"Auvergne"},
+  {n:"16",nom:"Charente",pref:"Angoulême",reg:"Poitou-Charentes"},
+  {n:"17",nom:"Charente-Maritime",pref:"La Rochelle",reg:"Poitou-Charentes"},
+  {n:"18",nom:"Cher",pref:"Bourges",reg:"Centre"},
+  {n:"19",nom:"Corrèze",pref:"Tulle",reg:"Limousin"},
+  {n:"21",nom:"Côte-d'Or",pref:"Dijon",reg:"Bourgogne"},
+  {n:"22",nom:"Côtes-d'Armor",pref:"Saint-Brieuc",reg:"Bretagne"},
+  {n:"23",nom:"Creuse",pref:"Guéret",reg:"Limousin"},
+  {n:"24",nom:"Dordogne",pref:"Périgueux",reg:"Aquitaine"},
+  {n:"25",nom:"Doubs",pref:"Besançon",reg:"Franche-Comté"},
+  {n:"26",nom:"Drôme",pref:"Valence",reg:"Rhône-Alpes"},
+  {n:"27",nom:"Eure",pref:"Évreux",reg:"Haute-Normandie"},
+  {n:"28",nom:"Eure-et-Loir",pref:"Chartres",reg:"Centre"},
+  {n:"29",nom:"Finistère",pref:"Quimper",reg:"Bretagne"},
+  {n:"2A",nom:"Corse-du-Sud",pref:"Ajaccio",reg:"Corse"},
+  {n:"2B",nom:"Haute-Corse",pref:"Bastia",reg:"Corse"},
+  {n:"30",nom:"Gard",pref:"Nîmes",reg:"Languedoc-Roussillon"},
+  {n:"31",nom:"Haute-Garonne",pref:"Toulouse",reg:"Midi-Pyrénées"},
+  {n:"32",nom:"Gers",pref:"Auch",reg:"Midi-Pyrénées"},
+  {n:"33",nom:"Gironde",pref:"Bordeaux",reg:"Aquitaine"},
+  {n:"34",nom:"Hérault",pref:"Montpellier",reg:"Languedoc-Roussillon"},
+  {n:"35",nom:"Ille-et-Vilaine",pref:"Rennes",reg:"Bretagne"},
+  {n:"36",nom:"Indre",pref:"Châteauroux",reg:"Centre"},
+  {n:"37",nom:"Indre-et-Loire",pref:"Tours",reg:"Centre"},
+  {n:"38",nom:"Isère",pref:"Grenoble",reg:"Rhône-Alpes"},
+  {n:"39",nom:"Jura",pref:"Lons-le-Saunier",reg:"Franche-Comté"},
+  {n:"40",nom:"Landes",pref:"Mont-de-Marsan",reg:"Aquitaine"},
+  {n:"41",nom:"Loir-et-Cher",pref:"Blois",reg:"Centre"},
+  {n:"42",nom:"Loire",pref:"Saint-Étienne",reg:"Rhône-Alpes"},
+  {n:"43",nom:"Haute-Loire",pref:"Le Puy-en-Velay",reg:"Auvergne"},
+  {n:"44",nom:"Loire-Atlantique",pref:"Nantes",reg:"Pays de la Loire"},
+  {n:"45",nom:"Loiret",pref:"Orléans",reg:"Centre"},
+  {n:"46",nom:"Lot",pref:"Cahors",reg:"Midi-Pyrénées"},
+  {n:"47",nom:"Lot-et-Garonne",pref:"Agen",reg:"Aquitaine"},
+  {n:"48",nom:"Lozère",pref:"Mende",reg:"Languedoc-Roussillon"},
+  {n:"49",nom:"Maine-et-Loire",pref:"Angers",reg:"Pays de la Loire"},
+  {n:"50",nom:"Manche",pref:"Saint-Lô",reg:"Basse-Normandie"},
+  {n:"51",nom:"Marne",pref:"Châlons-en-Champagne",reg:"Champagne-Ardenne"},
+  {n:"52",nom:"Haute-Marne",pref:"Chaumont",reg:"Champagne-Ardenne"},
+  {n:"53",nom:"Mayenne",pref:"Laval",reg:"Pays de la Loire"},
+  {n:"54",nom:"Meurthe-et-Moselle",pref:"Nancy",reg:"Lorraine"},
+  {n:"55",nom:"Meuse",pref:"Bar-le-Duc",reg:"Lorraine"},
+  {n:"56",nom:"Morbihan",pref:"Vannes",reg:"Bretagne"},
+  {n:"57",nom:"Moselle",pref:"Metz",reg:"Lorraine"},
+  {n:"58",nom:"Nièvre",pref:"Nevers",reg:"Bourgogne"},
+  {n:"59",nom:"Nord",pref:"Lille",reg:"Nord-Pas-de-Calais"},
+  {n:"60",nom:"Oise",pref:"Beauvais",reg:"Picardie"},
+  {n:"61",nom:"Orne",pref:"Alençon",reg:"Basse-Normandie"},
+  {n:"62",nom:"Pas-de-Calais",pref:"Arras",reg:"Nord-Pas-de-Calais"},
+  {n:"63",nom:"Puy-de-Dôme",pref:"Clermont-Ferrand",reg:"Auvergne"},
+  {n:"64",nom:"Pyrénées-Atlantiques",pref:"Pau",reg:"Aquitaine"},
+  {n:"65",nom:"Hautes-Pyrénées",pref:"Tarbes",reg:"Midi-Pyrénées"},
+  {n:"66",nom:"Pyrénées-Orientales",pref:"Perpignan",reg:"Languedoc-Roussillon"},
+  {n:"67",nom:"Bas-Rhin",pref:"Strasbourg",reg:"Alsace"},
+  {n:"68",nom:"Haut-Rhin",pref:"Colmar",reg:"Alsace"},
+  {n:"69",nom:"Rhône",pref:"Lyon",reg:"Rhône-Alpes"},
+  {n:"70",nom:"Haute-Saône",pref:"Vesoul",reg:"Franche-Comté"},
+  {n:"71",nom:"Saône-et-Loire",pref:"Mâcon",reg:"Bourgogne"},
+  {n:"72",nom:"Sarthe",pref:"Le Mans",reg:"Pays de la Loire"},
+  {n:"73",nom:"Savoie",pref:"Chambéry",reg:"Rhône-Alpes"},
+  {n:"74",nom:"Haute-Savoie",pref:"Annecy",reg:"Rhône-Alpes"},
+  {n:"75",nom:"Paris",pref:"Paris",reg:"Île-de-France"},
+  {n:"76",nom:"Seine-Maritime",pref:"Rouen",reg:"Haute-Normandie"},
+  {n:"77",nom:"Seine-et-Marne",pref:"Melun",reg:"Île-de-France"},
+  {n:"78",nom:"Yvelines",pref:"Versailles",reg:"Île-de-France"},
+  {n:"79",nom:"Deux-Sèvres",pref:"Niort",reg:"Poitou-Charentes"},
+  {n:"80",nom:"Somme",pref:"Amiens",reg:"Picardie"},
+  {n:"81",nom:"Tarn",pref:"Albi",reg:"Midi-Pyrénées"},
+  {n:"82",nom:"Tarn-et-Garonne",pref:"Montauban",reg:"Midi-Pyrénées"},
+  {n:"83",nom:"Var",pref:"Toulon",reg:"PACA"},
+  {n:"84",nom:"Vaucluse",pref:"Avignon",reg:"PACA"},
+  {n:"85",nom:"Vendée",pref:"La Roche-sur-Yon",reg:"Pays de la Loire"},
+  {n:"86",nom:"Vienne",pref:"Poitiers",reg:"Poitou-Charentes"},
+  {n:"87",nom:"Haute-Vienne",pref:"Limoges",reg:"Limousin"},
+  {n:"88",nom:"Vosges",pref:"Épinal",reg:"Lorraine"},
+  {n:"89",nom:"Yonne",pref:"Auxerre",reg:"Bourgogne"},
+  {n:"90",nom:"Territoire-de-Belfort",pref:"Belfort",reg:"Franche-Comté"},
+  {n:"91",nom:"Essonne",pref:"Évry",reg:"Île-de-France"},
+  {n:"92",nom:"Hauts-de-Seine",pref:"Nanterre",reg:"Île-de-France"},
+  {n:"93",nom:"Seine-Saint-Denis",pref:"Bobigny",reg:"Île-de-France"},
+  {n:"94",nom:"Val-de-Marne",pref:"Créteil",reg:"Île-de-France"},
+  {n:"95",nom:"Val-d'Oise",pref:"Pontoise",reg:"Île-de-France"},
+];
+
+// ── UTILS ──
+const shuf = a => [...a].sort(() => Math.random() - 0.5);
+const msg = p => p===100?"🏆 Score parfait !":p>=80?"Excellent !":p>=60?"Bien joué !":p>=40?"Pas mal, continue !":"Il faut réviser…";
+
+function hearts(el, lives, max=3) {
+  el.innerHTML = '';
+  for (let i=0;i<max;i++) {
+    const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    s.setAttribute('width','18');s.setAttribute('height','18');s.setAttribute('viewBox','0 0 24 24');
+    if(i>=lives)s.style.opacity='.15';
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z');
+    path.setAttribute('fill',i<lives?'#e8854a':'rgba(255,255,255,.2)');
+    s.appendChild(path); el.appendChild(s);
+  }
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='cap')||(i===1&&t==='dep')));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('panel-'+t).classList.add('on');
+}
+
+// ── CAPITALES ──
+let cData=[],cQ=[],cI=0,cScore=0,cStr=0,cLives=3;
+
+function getCD(){
+  const z=document.getElementById('cap-zone').value;
+  const mp=parseFloat(document.getElementById('cap-pop').value)||0;
+  return CAP.filter(x=>(z==='all'||x.z===z)&&x.pop>=mp);
+}
+
+function resetCap(){
+  cData=getCD(); cQ=shuf(cData); cI=0;cScore=0;cStr=0;cLives=3;
+  document.getElementById('cap-end').classList.remove('on');
+  document.getElementById('cap-game').style.display='';
+  document.getElementById('cap-total').textContent=cQ.length;
+  updCap(); showCap();
+}
+
+function updCap(){
+  hearts(document.getElementById('cap-hearts'),cLives);
+  document.getElementById('cap-score').textContent=cScore;
+  document.getElementById('cap-streak').textContent=cStr>=3?'🔥 ×'+cStr:'';
+  document.getElementById('cap-prog').style.width=(cQ.length?cI/cQ.length*100:0)+'%';
+}
+
+function showCap(){
+  if(cI>=cQ.length||cLives<=0){endCap();return;}
+  const q=cQ[cI];
+  document.getElementById('cap-pays').textContent=q.p;
+  document.getElementById('cap-z').textContent=q.z;
+  document.getElementById('cap-fb').className='fb';
+  document.getElementById('cap-next').classList.remove('on');
+  let sameZone=CAP.filter(x=>x.z===q.z&&x.c!==q.c);
+  if(sameZone.length<3) sameZone=[...sameZone,...CAP.filter(x=>x.z!==q.z&&x.c!==q.c)];
+  const pool=shuf(sameZone).slice(0,3).map(x=>x.c);
+  const opts=shuf([q.c,...pool]);
+  const div=document.getElementById('cap-choices');
+  div.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='choice';b.textContent=o;
+    b.onclick=()=>evalCap(b,o,q.c,div);
+    div.appendChild(b);
+  });
+}
+
+// ── SONS ──
+const AC=new(window.AudioContext||window.webkitAudioContext)();
+function playOk(){
+  const t=AC.currentTime;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);
+  o.type='sine';o.frequency.setValueAtTime(880,t);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(0.12,t+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.35);
+  o.start(t);o.stop(t+0.35);
+}
+function playErr(){
+  const t=AC.currentTime;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);
+  o.type='sine';
+  o.frequency.setValueAtTime(330,t);
+  o.frequency.linearRampToValueAtTime(220,t+0.18);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(0.16,t+0.02);
+  g.gain.setValueAtTime(0.16,t+0.1);
+  g.gain.linearRampToValueAtTime(0,t+0.28);
+  o.start(t);o.stop(t+0.3);
+}
+
+function evalCap(btn,chosen,correct,div){
+  div.querySelectorAll('.choice').forEach(b=>b.disabled=true);
+  const ok=chosen===correct;
+  btn.classList.add(ok?'cor':'wrg');
+  if(!ok){div.querySelectorAll('.choice').forEach(b=>{if(b.textContent===correct)b.classList.add('cor');});cLives--;cStr=0;playErr();}
+  else{cScore++;cStr++;playOk();}
+  const fb=document.getElementById('cap-fb');
+  fb.className='fb '+(ok?'cor':'wrg');
+  fb.innerHTML=ok?'<div class="fb-main">✓ Bonne réponse !</div>'
+    :'<div class="fb-main">✗ C\'était : '+correct+'</div>';
+  cI++; updCap();
+  document.getElementById('cap-next').classList.add('on');
+}
+
+function nextCap(){showCap();}
+
+function endCap(){
+  document.getElementById('cap-game').style.display='none';
+  const played=cI;
+  const pct=played?Math.round(cScore/played*100):0;
+  document.getElementById('cap-escore').textContent=cScore+' / '+played;
+  document.getElementById('cap-epct').textContent=pct+'% de bonnes réponses';
+  document.getElementById('cap-emsg').textContent=msg(pct);
+  document.getElementById('cap-end').classList.add('on');
+}
+
+// ── DÉPARTEMENTS ──
+let dQ=[],dI=0,dScore=0,dStr=0,dLives=3,dMode=true;
+
+function getDReg(){return document.getElementById('dep-reg').value;}
+function getDD(){const r=getDReg();return r==='all'?DEP:DEP.filter(d=>d.reg===r);}
+
+function initDep(){
+  const sel=document.getElementById('dep-reg');
+  const regs=[...new Set(DEP.map(d=>d.reg))].sort();
+  sel.innerHTML='<option value="all">Toutes les régions</option>';
+  regs.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);});
+}
+
+function resetDep(){
+  const data=getDD(); dQ=shuf(data); dI=0;dScore=0;dStr=0;dLives=3;
+  document.getElementById('dep-end').classList.remove('on');
+  document.getElementById('dep-game').style.display='';
+  document.getElementById('dep-total').textContent=dQ.length;
+  updDep(); showDep();
+}
+
+function updDep(){
+  hearts(document.getElementById('dep-hearts'),dLives);
+  document.getElementById('dep-score').textContent=dScore;
+  document.getElementById('dep-streak').textContent=dStr>=3?'🔥 ×'+dStr:'';
+  document.getElementById('dep-prog').style.width=(dQ.length?dI/dQ.length*100:0)+'%';
+}
+
+function showDep(){
+  if(dI>=dQ.length||dLives<=0){endDep();return;}
+  const q=dQ[dI];
+  document.getElementById('dep-fb').className='fb';
+  document.getElementById('dep-next').classList.remove('on');
+  const data=getDD();
+  let correct,pool;
+  if(dMode){
+    document.getElementById('dep-qlabel').textContent='Quel département correspond au numéro…';
+    document.getElementById('dep-qtext').textContent=q.n;
+    correct=q.nom;
+    let sameReg=DEP.filter(d=>d.reg===q.reg&&d.nom!==q.nom);
+    if(sameReg.length<3) sameReg=[...sameReg,...DEP.filter(d=>d.reg!==q.reg&&d.nom!==q.nom)];
+    pool=shuf(sameReg).slice(0,3).map(d=>d.nom);
+  } else {
+    document.getElementById('dep-qlabel').textContent='Quel numéro correspond au département…';
+    document.getElementById('dep-qtext').textContent=q.nom;
+    correct=q.n;
+    let sameReg=DEP.filter(d=>d.reg===q.reg&&d.n!==q.n);
+    if(sameReg.length<3) sameReg=[...sameReg,...DEP.filter(d=>d.reg!==q.reg&&d.n!==q.n)];
+    pool=shuf(sameReg).slice(0,3).map(d=>d.n);
+  }
+  document.getElementById('dep-qzone').textContent='';
+  const opts=shuf([correct,...pool]);
+  const div=document.getElementById('dep-choices');
+  div.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='choice';b.textContent=o;
+    b.onclick=()=>evalDep(b,o,correct,div,q);
+    div.appendChild(b);
+  });
+}
+
+function evalDep(btn,chosen,correct,div,q){
+  div.querySelectorAll('.choice').forEach(b=>b.disabled=true);
+  const ok=chosen===correct;
+  btn.classList.add(ok?'cor':'wrg');
+  if(!ok){div.querySelectorAll('.choice').forEach(b=>{if(b.textContent===correct)b.classList.add('cor');});dLives--;dStr=0;playErr();}
+  else{dScore++;dStr++;playOk();}
+  const fb=document.getElementById('dep-fb');
+  fb.className='fb '+(ok?'cor':'wrg');
+  fb.innerHTML=(ok?'<div class="fb-main">✓ Bonne réponse !</div>':'<div class="fb-main">✗ C\'était : '+correct+'</div>')
+    +'<div class="fb-detail">'+q.pref+'</div><div class="fb-detail">'+q.reg+'</div>';
+  dI++; updDep();
+  document.getElementById('dep-next').classList.add('on');
+}
+
+function nextDep(){showDep();}
+function toggleDepMode(){dMode=!dMode;document.getElementById('dep-mtog').textContent=dMode?'N° → Département':'Département → N°';resetDep();}
+
+function endDep(){
+  document.getElementById('dep-game').style.display='none';
+  const played=dI;
+  const pct=played?Math.round(dScore/played*100):0;
+  document.getElementById('dep-escore').textContent=dScore+' / '+played;
+  document.getElementById('dep-epct').textContent=pct+'% de bonnes réponses';
+  document.getElementById('dep-emsg').textContent=msg(pct);
+  document.getElementById('dep-end').classList.add('on');
+}
+
+// INIT
+initDep();resetCap();resetDep();
+</script>
+</body>
+</html>
