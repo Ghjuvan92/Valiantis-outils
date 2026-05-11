@@ -87,9 +87,31 @@
   }
   .leg-item { display:flex; align-items:center; gap:.45rem; }
   .leg-line { width:22px; height:3px; border-radius:2px; flex-shrink:0; }
-    max-width:700px; margin:1rem auto 0;
-    font-size:.72rem; color:var(--gris);
-    text-align:center; font-style:italic; line-height:1.7;
+
+  .editorial {
+    max-width:720px; margin:2rem auto 1.5rem;
+    padding:1.8rem 2rem;
+    background:white; border:1px solid var(--bord); border-radius:4px;
+    box-shadow: 0 1px 8px rgba(26,46,69,.06);
+  }
+  .editorial h2 {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.3rem; font-weight:600;
+    color:var(--bleu); margin-bottom:1.2rem;
+    padding-bottom:.6rem;
+    border-bottom:1px solid var(--bord);
+    letter-spacing:.02em;
+  }
+  .editorial p {
+    font-size:.88rem; line-height:1.8;
+    color:#3a3a4a; margin-bottom:1rem;
+  }
+  .editorial p:last-child { margin-bottom:0; }
+  .editorial .conclusion {
+    font-weight:600; color:var(--bleu);
+    border-left:3px solid var(--or);
+    padding-left:.9rem;
+    margin-top:1.2rem;
   }
 
   .footer-band {
@@ -148,11 +170,13 @@
 
 <div class="legende" id="legende"></div>
 
-<p class="note">
-  Mouvement brownien : σ_taux × √t. Performance = portage × t − sensibilité × ΔR/100.
-  Vert = baisse de taux · Bleu marine = taux stables · Rouge = hausse de taux.
-  Les performances passées ne préjugent pas des performances futures.
-</p>
+<div class="editorial">
+  <h2>Le temps, meilleur allié de l'investisseur</h2>
+  <p>Un placement qui génère un rendement supérieur à celui d'un livret sans risque ne démontre sa valeur que sur la durée. Sur un an, la volatilité des marchés peut faire apparaître le placement risqué comme perdant, même si son potentiel de long terme est bien réel. Comparer les deux sur une courte période est trompeur sur le potentiel à long terme.</p>
+  <p>Sur une année, les scénarios extrêmes — hausse ou baisse des taux — ont presque autant de chances de se réaliser que le scénario central. La zone foncée, qui représente les trajectoires les plus probables, est équitablement répartie.</p>
+  <p>Au bout de la 5<sup>ème</sup> année en revanche, la zone des performances possibles s'est élargie mais la plus forte probabilité est concentrée autour du scénario stable. Car la probabilité que les taux montent — ou baissent — cinq années consécutives est extrêmement faible. Les chemins extrêmes, ceux qui conduiraient à une sous-performance persistante, sont devenus rares, presque blancs sur le graphique. Au final, c'est l'effet portage qui prend le dessus : le fait d'être rémunéré au temps passé et d'encaisser chaque jour 1/365<sup>ème</sup> du rendement obligataire. Le reste des variations, hausses ou baisses, ayant tendance à s'annuler sur longue période.</p>
+  <p class="conclusion">Le temps réduit l'incertitude et laisse au portage faire son travail. C'est pourquoi un placement obligataire ou diversifié ne doit jamais être jugé sur quelques mois, mais évalué sur l'horizon pour lequel il a été conçu.</p>
+</div>
 
 <div class="footer-band">valiantis.fr · Cabinet indépendant de stratégie patrimoniale</div>
 
